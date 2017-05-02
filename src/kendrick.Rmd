@@ -11,14 +11,11 @@ library(stringr)
 library(tidytext)
 library(lda)
 library(LDAvis)
-library(Rspotify)
 library(lubridate)
+library(rvest)
+library(scales)
 ```
 
-
-```{r authentication}
-keys <- spotifyOAuth("laingdk_app","fa98555660084d0b82471bcccedd65c8","7319c725f5c0469082b7ac663f02065e")
-```
 
 ```{r get_artists}
 
@@ -128,7 +125,187 @@ get_tracks <- function(artist_info, album_info) {
 
 spotify_df <- get_tracks(artist_info, album_info)
 
-spotify_df
+# Get rid of the remixes of Bitch, Don't Kill My Vibe
+spotify_df <- spotify_df %>% filter(track_name != "Bitch, Don’t Kill My Vibe - Remix", track_name != "Bitch, Don’t Kill My Vibe - International Remix / Explicit Version")
+```
 
-plot(spotify_df$energy)
+```{r genius_get_artists}
+##### Genius Lyrics
+token <- 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
+genius_get_artists <- function(artist_name, n_results = 10) {
+    baseURL <- 'https://api.genius.com/search?q=' 
+    requestURL <- paste0(baseURL, gsub(' ', '%20', artist_name),
+                         '&per_page=', n_results,
+                         '&access_token=', token)
+    
+    res <- GET(requestURL) %>% content %>% .$response %>% .$hits
+    
+    map_df(1:length(res), function(x) {
+        tmp <- res[[x]]$result$primary_artist
+        list(
+            artist_id = tmp$id,
+            artist_name = tmp$name
+        )
+    }) %>% unique
+}
+
+genius_artists <- genius_get_artists('Kendrick Lamar')
+genius_artists
+```
+
+```{r genius_get_track_urls}
+## Get track urls
+baseURL <- 'https://api.genius.com/artists/' 
+requestURL <- paste0(baseURL, genius_artists$artist_id[1], '/songs')
+
+track_lyric_urls <- list()
+i <- 1
+while (i > 0) {
+    tmp <- GET(requestURL, query = list(access_token = token, per_page = 50, page = i)) %>% content %>% .$response
+    track_lyric_urls <- c(track_lyric_urls, tmp$songs)
+    if (!is.null(tmp$next_page)) {
+        i <- tmp$next_page
+    } else {
+        break
+    }
+}
+
+length(track_lyric_urls)
+summary(track_lyric_urls[[1]])
+
+filtered_track_lyric_urls <- c()
+filtered_track_lyric_titles <- c()
+filtered_track_annotations <- c()
+filtered_track_pageviews <- c()
+
+# Keep only the songs where Kendrick is the primary artist.
+for (i in 1:length(track_lyric_urls)) {
+        if (track_lyric_urls[[i]]$primary_artist$name == "Kendrick Lamar") {
+                filtered_track_lyric_urls <- append(filtered_track_lyric_urls, track_lyric_urls[[i]]$url)
+                filtered_track_lyric_titles <- append(filtered_track_lyric_titles, track_lyric_urls[[i]]$title)
+                filtered_track_annotations <- append(filtered_track_annotations, track_lyric_urls[[i]]$annotation_count)
+                filtered_track_pageviews <- append(filtered_track_pageviews, track_lyric_urls[[i]]$stats$pageviews)
+        }
+}
+
+# Fix the mismatches between Spotify's naming and Genius's naming.
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'Ignorance is Bliss'] <- "Ignorance Is Bliss"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'Alien Girl (Today With Her)'] <- "Alien Girl (Today W/ Her)"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "H.O.C."] <- "H.O.C"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "Fuck Your Ethnicity"] <- "F*ck Your Ethnicity"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'No Makeup (Her Vice)'] <- "No Make-Up (Her Vice)"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'Ronald Reagan Era (His Evils)'] <- "Ronald Reagan Era"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "Poe Man's Dream (His Vice)"] <- "Poe Mans Dreams (His Vice)"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'Kush & Corinthians (His Pain)'] <- "Kush & Corinthians"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "Ab-Soul's Outro"] <- "Ab-Souls Outro"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "Sherane a.k.a Master Splinter's Daughter"] <- "Sherane a.k.a Master Splinter’s Daughter"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "Bitch, Don't Kill My Vibe"] <- "Bitch, Don’t Kill My Vibe"
+filtered_track_lyric_titles[117] <- "good kid"
+filtered_track_lyric_titles[196] <- "m.A.A.d city"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'Swimming Pools (Drank)'] <- "Swimming Pools (Drank) - Extended Version"
+filtered_track_lyric_titles[filtered_track_lyric_titles == "Sing About Me, I'm Dying of Thirst"] <- "Sing About Me, I'm Dying Of Thirst"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'For Free? (Interlude)'] <- "For Free? - Interlude"
+filtered_track_lyric_titles[318] <- "u"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'For Sale? (Interlude)'] <- "For Sale? - Interlude"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'How Much a Dollar Cost'] <- "How Much A Dollar Cost"
+filtered_track_lyric_titles[filtered_track_lyric_titles == 'The Blacker the Berry'] <- "The Blacker The Berry"
+filtered_track_lyric_titles[151] <- "i"
+filtered_track_lyric_titles[320] <- "untitled 01 | 08.19.2014."
+filtered_track_lyric_titles[321] <- "untitled 02 | 06.23.2014."
+filtered_track_lyric_titles[322] <- "untitled 03 | 05.28.2013."
+filtered_track_lyric_titles[323] <- "untitled 04 | 08.14.2014."
+filtered_track_lyric_titles[324] <- "untitled 05 | 09.21.2014."
+filtered_track_lyric_titles[325] <- "untitled 06 | 06.30.2014."
+filtered_track_lyric_titles[326] <- "untitled 07 | 2014 - 2016"
+filtered_track_lyric_titles[328] <- "untitled 08 | 09.06.2014."
+filtered_track_lyric_titles[filtered_track_lyric_titles == "LOYALTY."] <- "LOYALTY. FEAT. RIHANNA."
+filtered_track_lyric_titles[filtered_track_lyric_titles == "LOVE."] <- "LOVE. FEAT. ZACARI."
+filtered_track_lyric_titles[filtered_track_lyric_titles == "XXX."] <- "XXX. FEAT. U2."
+
+# Check to make sure all of the album songs are now present in the filtered track lyric titles.
+length(spotify_df$track_name[spotify_df$track_name %in% filtered_track_lyric_titles]) == length(spotify_df$track_name)
+
+# Keep only the urls for the songs in the full-length albums.
+track_urls <- filtered_track_lyric_urls[filtered_track_lyric_titles %in% spotify_df$track_name]
+track_titles <- filtered_track_lyric_titles[filtered_track_lyric_titles %in% spotify_df$track_name]
+track_annotations <- filtered_track_annotations[filtered_track_lyric_titles %in% spotify_df$track_name]
+track_pageviews <- filtered_track_pageviews[filtered_track_lyric_titles %in% spotify_df$track_name]
+
+# Make sure they're the same length.
+length(track_urls)
+length(track_titles)
+length(track_annotations)
+length(track_pageviews)
+
+length(filtered_track_pageviews)
+length(filtered_track_annotations)
+```
+
+```{r scrape_lyrics}
+lyric_scraper <- function(url) {
+    read_html(url) %>% 
+        html_node('lyrics') %>% 
+        html_text
+}
+
+genius_df <- map_df(1:length(track_urls), function(x) {
+    # add in error handling
+    lyrics <- try(lyric_scraper(track_urls[x]))
+    if (class(lyrics) != 'try-error') {
+        # strip out non-lyric text and extra spaces
+        #lyrics <- str_replace_all(lyrics, '\\[(Verse [[:digit:]]|Pre-Chorus [[:digit:]]|Hook [[:digit:]]|Produced by [[\w+]]|Chorus|Outro|Verse|Refrain|Hook|Bridge|Intro|Instrumental|Pre-Chorus)\\]|[[:digit:]]|[\\.!?\\(\\)\\[\\],]', '')
+        lyrics <- str_replace_all(lyrics, '\\n', ' ')
+        lyrics <- str_replace_all(lyrics, '\\[(.*?)\\]', '')
+        lyrics <- str_replace_all(lyrics, '([A-Z])', ' \\1')
+        lyrics <- str_replace_all(lyrics, ' {2,}', ' ')
+        lyrics <- tolower(str_trim(lyrics))
+    } else {
+        lyrics <- NA
+    }
+    
+    tots <- list(
+        track_name = track_titles[x],
+        lyrics = lyrics
+    )
+    
+    return(tots)
+})
+
+head(genius_df)
+```
+
+```{r join_all}
+new_genius_df <- genius_df %>% 
+    mutate(track_name_join = tolower(str_replace(track_name, '[[:punct:]]', ''))) %>% 
+    filter(!duplicated(track_name_join)) %>% 
+    select(-track_name)
+
+track_df <- spotify_df %>%
+    mutate(track_name_join = tolower(str_replace(track_name, '[[:punct:]]', ''))) %>%
+    left_join(new_genius_df, by = 'track_name_join')
+
+# Fix the factor levels for the albums.
+track_df$album_name <- factor(track_df$album_name, levels = c("Overly Dedicated", "Section.80", "good kid, m.A.A.d city", "To Pimp A Butterfly", "untitled unmastered.", "DAMN."))
+
+# Add a career-wide track number.
+track_df$career_track_number <- 1:dim(track_df)[1]
+
+# Add annotation counts and pageviews
+track_df$annotations <- track_annotations
+track_df$pageviews <- track_pageviews
+
+head(track_df)
+```
+
+```{r viz, fig.width = 12, fig.height=4}
+ggplot(track_df, aes(x = track_number, y = annotations, color = album_name)) +
+        geom_point(show.legend = FALSE) +
+        facet_grid(~album_name, scales = "free_x", space = "free_x") +
+        scale_x_continuous(breaks= c(2,4,6,8,10,12,14,16))
+
+track_pageviews
+
+ggplot(track_df) +
+        geom_point(aes(x = career_track_number, y = acousticness))
 ```
