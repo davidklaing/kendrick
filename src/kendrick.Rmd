@@ -1,15 +1,15 @@
 ---
-title: "Untitled"
+title: "Kendrick"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(httr)
 library(stringr)
+library(httr)
 library(tidytext)
-library(lda)
+library(topicmodels)
 library(LDAvis)
 library(lubridate)
 library(rvest)
@@ -17,6 +17,7 @@ library(scales)
 library(ggthemes)
 library(wordcloud)
 library(reshape2)
+library(tm)
 ```
 
 
@@ -134,7 +135,7 @@ spotify_df <- spotify_df %>% filter(track_name != "Bitch, Don’t Kill My Vibe -
 
 ```{r genius_get_artists}
 ##### Genius Lyrics
-token <- 'MnuMk_q6B0pAcuT3X45utsbqfdPMhAuSxK1Cq2bfd8jJ63Hpc3MqSKXhML4ED7Aw'
+token <- '0lokoRjkqEptGnYolES38msiGzQrkzaN3lVuw9yRnJ709vbCqtubHkD_8OB5f6Jc'
 
 genius_get_artists <- function(artist_name, n_results = 10) {
     baseURL <- 'https://api.genius.com/search?q=' 
@@ -211,23 +212,23 @@ filtered_track_lyric_titles[filtered_track_lyric_titles == "Ab-Soul's Outro"] <-
 filtered_track_lyric_titles[filtered_track_lyric_titles == "Sherane a.k.a Master Splinter's Daughter"] <- "Sherane a.k.a Master Splinter’s Daughter"
 filtered_track_lyric_titles[filtered_track_lyric_titles == "Bitch, Don't Kill My Vibe"] <- "Bitch, Don’t Kill My Vibe"
 filtered_track_lyric_titles[119] <- "good kid"
-filtered_track_lyric_titles[196] <- "m.A.A.d city"
+filtered_track_lyric_titles[198] <- "m.A.A.d city"
 filtered_track_lyric_titles[filtered_track_lyric_titles == 'Swimming Pools (Drank)'] <- "Swimming Pools (Drank) - Extended Version"
 filtered_track_lyric_titles[filtered_track_lyric_titles == "Sing About Me, I'm Dying of Thirst"] <- "Sing About Me, I'm Dying Of Thirst"
 filtered_track_lyric_titles[filtered_track_lyric_titles == 'For Free? (Interlude)'] <- "For Free? - Interlude"
-filtered_track_lyric_titles[318] <- "u"
+filtered_track_lyric_titles[320] <- "u"
 filtered_track_lyric_titles[filtered_track_lyric_titles == 'For Sale? (Interlude)'] <- "For Sale? - Interlude"
 filtered_track_lyric_titles[filtered_track_lyric_titles == 'How Much a Dollar Cost'] <- "How Much A Dollar Cost"
 filtered_track_lyric_titles[filtered_track_lyric_titles == 'The Blacker the Berry'] <- "The Blacker The Berry"
 filtered_track_lyric_titles[153] <- "i"
-filtered_track_lyric_titles[320] <- "untitled 01 | 08.19.2014."
-filtered_track_lyric_titles[321] <- "untitled 02 | 06.23.2014."
-filtered_track_lyric_titles[322] <- "untitled 03 | 05.28.2013."
-filtered_track_lyric_titles[323] <- "untitled 04 | 08.14.2014."
-filtered_track_lyric_titles[324] <- "untitled 05 | 09.21.2014."
-filtered_track_lyric_titles[325] <- "untitled 06 | 06.30.2014."
-filtered_track_lyric_titles[326] <- "untitled 07 | 2014 - 2016"
-filtered_track_lyric_titles[328] <- "untitled 08 | 09.06.2014."
+filtered_track_lyric_titles[322] <- "untitled 01 | 08.19.2014."
+filtered_track_lyric_titles[323] <- "untitled 02 | 06.23.2014."
+filtered_track_lyric_titles[324] <- "untitled 03 | 05.28.2013."
+filtered_track_lyric_titles[325] <- "untitled 04 | 08.14.2014."
+filtered_track_lyric_titles[326] <- "untitled 05 | 09.21.2014."
+filtered_track_lyric_titles[327] <- "untitled 06 | 06.30.2014."
+filtered_track_lyric_titles[328] <- "untitled 07 | 2014 - 2016"
+filtered_track_lyric_titles[330] <- "untitled 08 | 09.06.2014."
 filtered_track_lyric_titles[filtered_track_lyric_titles == "LOYALTY."] <- "LOYALTY. FEAT. RIHANNA."
 filtered_track_lyric_titles[filtered_track_lyric_titles == "LOVE."] <- "LOVE. FEAT. ZACARI."
 filtered_track_lyric_titles[filtered_track_lyric_titles == "XXX."] <- "XXX. FEAT. U2."
@@ -249,6 +250,7 @@ length(track_urls)
 length(track_titles)
 length(track_annotations)
 length(track_pageviews)
+
 ```
 
 ```{r scrape_lyrics}
@@ -323,10 +325,10 @@ kendrick$album_name <- factor(kendrick$album_name, levels = c("Overly Dedicated"
 kendrick <- kendrick %>% filter(album_name != "Overly Dedicated")
 
 # Get word counts for each album.
-kendrick %>% group_by(album_name) %>% summarise(word_count = sum(song_word_count))
+album_word_counts <- kendrick %>% group_by(album_name) %>% summarise(word_count = sum(song_word_count))
 
 ggplot(kendrick) +
-        geom_point(aes(x = track_number, y = song_word_count, color = album_name), show.legend = FALSE) +
+        geom_col(aes(x = track_number, y = annotations/song_word_count, fill = album_name), show.legend = FALSE) +
         facet_grid(~album_name, scales = "free_x", space = "free_x") +
         scale_x_continuous(breaks= c(2,4,6,8,10,12,14,16)) +
         theme_tufte(base_family = 'GillSans')
@@ -343,11 +345,10 @@ kendrick$lyrics <- as.character(kendrick$lyrics)
 tidy_kendrick <- kendrick %>% unnest_tokens(word, lyrics)
 
 # Remove stop words.
-data("stop_words")
 cleaned_kendrick <- tidy_kendrick %>%
         anti_join(stop_words)
 
-# Check out the most common words in the forum.
+# Check out the most common words in the corpus.
 cleaned_kendrick %>%
         count(word, sort = TRUE) %>% 
         head()
@@ -363,11 +364,17 @@ kendrick_sentiment <- cleaned_kendrick %>%
         mutate(sentiment = (positive - negative)/(positive + negative))
 
 kendrick <- inner_join(kendrick, kendrick_sentiment)
+
+kendrick <- kendrick %>% mutate(smart_sentiment = (sentiment + (valence*2)-1)/2)
+
+kendrick
+
+cleaned_kendrick$track_name[cleaned_kendrick$word == "complicated"]
 ```
 
 ```{r sentiment_viz, fig.width=11, fig.height=4, warning=FALSE, message=FALSE}
 # See how the sentiment changes across the post order.
-ggplot(kendrick, aes(x = track_number, y = sentiment, color = sentiment)) +
+ggplot(kendrick, aes(x = track_number, y = smart_sentiment, color = smart_sentiment)) +
         geom_hline(aes(yintercept=1, color=1), linetype="dashed", show.legend = FALSE) +
         geom_hline(aes(yintercept=0.5, color=0.5), linetype="dashed", show.legend = FALSE) +
         geom_hline(aes(yintercept=0, color=0), linetype="dashed", show.legend = FALSE) +
@@ -376,12 +383,12 @@ ggplot(kendrick, aes(x = track_number, y = sentiment, color = sentiment)) +
         #geom_line(aes(color=..y..)) +
         geom_smooth(aes(color=..y..), size = 2, show.legend = FALSE, se = FALSE, span = 0.3) +
         geom_smooth(color="black", size = 0.3, show.legend = FALSE, alpha = 0.9, se = FALSE, span = 0.3) +
-        geom_point(color = "black", size=2, show.legend = FALSE) +
+        #geom_point(color = "black", size=2, show.legend = FALSE) +
         facet_grid(~album_name, scales = "free_x", space = "free_x") +
         scale_x_continuous(breaks= c(2,4,6,8,10,12,14,16)) +
         scale_color_distiller(type = "div", palette = "RdYlGn", direction = 1, values = c(0,0.5,1)) +
         theme_tufte(base_family = 'GillSans') +
-        labs(title = "Sentiment in Kendrick Lamar's Lyrics") +
+        labs(title = "Sentiment in Kendrick Lamar's Music and Lyrics") +
         xlab("") +
         ylab("") +
         scale_y_continuous(limits = c(-1,1),
@@ -423,4 +430,157 @@ tidy_kendrick %>%
         acast(word ~ sentiment, value.var = "n", fill = 0) %>%
         comparison.cloud(colors = c("red", "#3CDE00"),
                          max.words = 100)
+
+tidy_kendrick
 ```
+
+TOPIC MODELLING
+
+```{r tfidf, fig.width=10, fig.height=4}
+# Get the word counts for each track.
+word_counts <- tidy_kendrick %>%
+        select(album_name, track_number, track_name, word) %>% 
+        anti_join(stop_words) %>%
+        count(album_name, track_number, track_name, word, sort = TRUE) %>% 
+        ungroup() %>% 
+        left_join(album_word_counts)
+
+# Take a look.
+head(word_counts)
+
+# Get the tf-idf
+album_words <- word_counts %>%
+  bind_tf_idf(word, album_name, n)
+
+# Take a look.
+head(album_words)
+
+# Look at the words with the highest tf-idf.
+album_words %>%
+  select(-word_count) %>%
+  arrange(desc(tf_idf))
+
+# Look at the words with the highest tf-idf within DAMN.
+album_words %>%
+  filter(album_name == "To Pimp A Butterfly") %>%
+  select(-word_count) %>%
+  arrange(desc(tf_idf))
+
+plot_albums <- album_words %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word))))
+
+plot_albums %>% 
+        group_by(album_name) %>%
+        top_n(5) %>%
+        ungroup %>%
+        ggplot(aes(word, tf_idf, fill = album_name)) +
+        geom_col(show.legend = FALSE) +
+        labs(x = NULL, y = "tf-idf") +
+        facet_wrap(~album_name, nrow = 1, scales = "free") +
+        coord_flip()
+
+```
+
+```{r word_clouds, warning = FALSE}
+# Word cloud for Section.80
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "Section.80")
+plot_albums[plot_albums$album_name == "Section.80",] %>%
+        with(wordcloud(word, tf_idf, max.words = 75, random.order = F))
+
+# Word cloud for good kid
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "good kid, m.A.A.d city")
+plot_albums[plot_albums$album_name == "good kid, m.A.A.d city",] %>%
+        with(wordcloud(word, tf_idf, max.words = 75, random.order = F))
+
+# Word cloud for TPAB
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "To Pimp A Butterfly")
+plot_albums[plot_albums$album_name == "To Pimp A Butterfly",] %>%
+        with(wordcloud(word, tf_idf, max.words = 75, random.order = F))
+
+# Word cloud for untitled unmastered.
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "untitled unmastered.")
+plot_albums[plot_albums$album_name == "untitled unmastered.",] %>%
+        with(wordcloud(word, tf_idf, max.words = 75, random.order = F))
+
+# Word cloud for DAMN.
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "DAMN.")
+plot_albums[plot_albums$album_name == "DAMN.",] %>%
+        with(wordcloud(word, tf_idf, max.words = 75, random.order = F))
+```
+
+
+```{r topic}
+album_words_filtered <- album_words[album_words$album_name == "DAMN.",] %>%
+        top_n(2000, tf_idf) %>% 
+        unite(album_track, album_name, track_number)
+
+# Create the document-term matrix.
+tracks_dtm <- album_words_filtered %>%
+  cast_dtm(album_track, word, n)
+
+# Fit a Latent Dirichlet Allocation model.
+tracks_lda <- LDA(tracks_dtm, k = 6, control = list(seed = 1))
+tracks_lda_td <- tidy(tracks_lda)
+
+top_terms <- tracks_lda_td %>%
+        group_by(topic) %>%
+        top_n(4, beta) %>%
+        ungroup() %>%
+        arrange(topic, -beta)
+
+top_terms %>%
+        mutate(term = reorder(term, beta)) %>%
+        ggplot(aes(term, beta)) +
+        geom_bar(stat = "identity") +
+        facet_wrap(~ topic, scales = "free") +
+        coord_cartesian(xlim=c(0, 5)) +
+        theme(axis.text.x = element_text(size = 1, angle = 0, hjust = 1)) +
+        coord_flip()
+```
+
+```{r testing for relationships}
+# Danceable songs are less likely to be annotated.
+ggplot(kendrick) +
+        geom_point(aes(x = danceability, y = (annotations/song_word_count))) +
+        geom_smooth(aes(x = danceability, y = (annotations/song_word_count)), method = "lm")
+
+summary(lm(I(annotations/song_word_count) ~ danceability, kendrick))
+
+# Danceable songs are less likely to be annotated.
+ggplot(kendrick) +
+        geom_point(aes(x = energy, y = (annotations/song_word_count))) +
+        geom_smooth(aes(x = energy, y = (annotations/song_word_count)), method = "lm")
+
+summary(lm(I(annotations/song_word_count) ~ energy, kendrick))
+
+```
+
+
+
+Sources:
+
+http://tidytextmining.com/tfidf.html#the-bind_tf_idf-function
+https://cran.r-project.org/web/packages/tidytext/vignettes/tf_idf.html
+https://cran.r-project.org/web/packages/tidytext/vignettes/topic_modeling.html
+
+
+
+
+
+
