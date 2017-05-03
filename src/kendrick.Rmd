@@ -15,6 +15,8 @@ library(lubridate)
 library(rvest)
 library(scales)
 library(ggthemes)
+library(wordcloud)
+library(reshape2)
 ```
 
 
@@ -310,7 +312,7 @@ track_df$song_word_count <- word_count
 write.csv(track_df, "../data/kendrick_data.csv")
 ```
 
-```{r viz, fig.width = 12, fig.height=4}
+```{r viz, fig.width=11, fig.height=4}
 # Load it up.
 kendrick <- read.csv("../data/kendrick_data.csv")
 
@@ -320,11 +322,105 @@ kendrick$album_name <- factor(kendrick$album_name, levels = c("Overly Dedicated"
 # Remove Overly Dedicated (a non-studio album)
 kendrick <- kendrick %>% filter(album_name != "Overly Dedicated")
 
+# Get word counts for each album.
+kendrick %>% group_by(album_name) %>% summarise(word_count = sum(song_word_count))
+
 ggplot(kendrick) +
         geom_point(aes(x = track_number, y = song_word_count, color = album_name), show.legend = FALSE) +
         facet_grid(~album_name, scales = "free_x", space = "free_x") +
         scale_x_continuous(breaks= c(2,4,6,8,10,12,14,16)) +
         theme_tufte(base_family = 'GillSans')
 
+```
 
+SENTIMENT ANALYSIS
+
+```{r sentiment}
+# Change the text from factor to character.
+kendrick$lyrics <- as.character(kendrick$lyrics)
+
+# Get one word per row.
+tidy_kendrick <- kendrick %>% unnest_tokens(word, lyrics)
+
+# Remove stop words.
+data("stop_words")
+cleaned_kendrick <- tidy_kendrick %>%
+        anti_join(stop_words)
+
+# Check out the most common words in the forum.
+cleaned_kendrick %>%
+        count(word, sort = TRUE) %>% 
+        head()
+
+# Get the sentiment of the Bing lexicon.
+bing <- get_sentiments("bing")
+
+# Get the sentiment across the tracks.
+kendrick_sentiment <- cleaned_kendrick %>%
+        inner_join(bing) %>%
+        count(track_name, sentiment) %>%
+        spread(sentiment, n, fill = 0) %>%
+        mutate(sentiment = (positive - negative)/(positive + negative))
+
+kendrick <- inner_join(kendrick, kendrick_sentiment)
+```
+
+```{r sentiment_viz, fig.width=11, fig.height=4, warning=FALSE, message=FALSE}
+# See how the sentiment changes across the post order.
+ggplot(kendrick, aes(x = track_number, y = sentiment, color = sentiment)) +
+        geom_hline(aes(yintercept=1, color=1), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=0.5, color=0.5), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=0, color=0), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=-0.5, color=-0.5), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=-1, color=-1), linetype="dashed", show.legend = FALSE) +
+        #geom_line(aes(color=..y..)) +
+        geom_smooth(aes(color=..y..), size = 2, show.legend = FALSE, se = FALSE, span = 0.3) +
+        geom_smooth(color="black", size = 0.3, show.legend = FALSE, alpha = 0.9, se = FALSE, span = 0.3) +
+        geom_point(color = "black", size=2, show.legend = FALSE) +
+        facet_grid(~album_name, scales = "free_x", space = "free_x") +
+        scale_x_continuous(breaks= c(2,4,6,8,10,12,14,16)) +
+        scale_color_distiller(type = "div", palette = "RdYlGn", direction = 1, values = c(0,0.5,1)) +
+        theme_tufte(base_family = 'GillSans') +
+        labs(title = "Sentiment in Kendrick Lamar's Lyrics") +
+        xlab("") +
+        ylab("") +
+        scale_y_continuous(limits = c(-1,1),
+                           labels = c("very negative", 
+                                      "negative", 
+                                      "neutral", 
+                                      "positive", 
+                                      "very positive"))
+```
+
+```{r word_clouds}
+# Get the words contribute most to each sentiment.
+bing_word_counts <- tidy_kendrick %>%
+        inner_join(bing) %>%
+        count(word, sentiment, sort = TRUE) %>%
+        ungroup()
+
+# View them.
+bing_word_counts %>%
+        filter(n > 20) %>%
+        mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+        mutate(word = reorder(word, n)) %>%
+        ggplot(aes(word, n, fill = sentiment)) +
+        geom_bar(stat = "identity", alpha = 0.8) +
+        scale_fill_manual(values = c("red", "#3CDE00")) +
+        theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
+        ylab("Contribution to sentiment") +
+        coord_flip()
+
+# See a word cloud of the top words by word count.
+cleaned_kendrick %>%
+        count(word) %>%
+        with(wordcloud(word, n, max.words = 100))
+
+# Colored by sentiment.
+tidy_kendrick %>%
+        inner_join(bing) %>%
+        count(word, sentiment, sort = TRUE) %>%
+        acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+        comparison.cloud(colors = c("red", "#3CDE00"),
+                         max.words = 100)
 ```
