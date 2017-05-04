@@ -1,7 +1,9 @@
-Exploring Kendrick Lamar's discography through data science
+Kendrick LamaR
 ================
 
-A few months
+Below is some analysis and visualization of Kendrick Lamar's music, using data from Spotify's and Genius's APIs. The script I used to query the data, which is adapted from RCharlie's post [fitteR happieR](http://rcharlie.com/2017-02-16-fitteR-happieR/), can be found [here](https://github.com/laingdk/kendrick/blob/master/src/scrape_kendrick.R). If you'd like to download the data yourself, you can find it [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv).
+
+Let's get started!
 
 ``` r
 # Load it up.
@@ -19,6 +21,8 @@ album_word_counts <- kendrick %>% group_by(album_name) %>% summarise(word_count 
 # Fix the factor levels.
 kendrick$track_name <- factor(kendrick$track_name, levels = as.character(kendrick$track_name))
 ```
+
+Let's see which of Kendrick's songs are the most analysed on Genius. One measure of this is the number of annotations for a given song. The only problem is that some songs have fewer lyrics than others, and no lyric can have more than one annotation. So let's use the number of annotations per lyric.
 
 ``` r
 # Plot the annotations per word.
@@ -40,22 +44,28 @@ annotation_plot <- ggplot(kendrick) +
         xlab("")
 
 # Save the plot.
-ggsave("../data/annotation_plot.png", width = 6, height = 5)
+ggsave("../results/annotation_plot.png", width = 6, height = 5)
 
 # Read it back in.
-annotation_plot <- image_read('../data/annotation_plot.png')
+annotation_plot <- image_read('../results/annotation_plot.png')
 
 # Rotate it.
 annotation_plot <- image_rotate(annotation_plot, 90)
 
 # Save it again.
-image_write(annotation_plot, path = "../data/annotation_plot.png", format = "png")
+image_write(annotation_plot, path = "../results/annotation_plot.png", format = "png")
 ```
 
-![](../data/annotation_plot.png)
+![](../results/annotation_plot.png)
 
 Sentiment Analysis
 ------------------
+
+Spotify's API provides a column called "valence", which is defined as follows:
+
+> A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).
+
+I'm also interested in the sentiment in the lyrics alone, and I think we can find a better description of the valence of the song by combining the lyric sentiment with Spotify's valence measure. Below I compute the sentiment of each song, by joining the lyrics with the Bing lexicon — a list of words which are labelled (by humans) as positive or negative.
 
 ``` r
 # Change the text from factor to character.
@@ -68,24 +78,7 @@ tidy_kendrick <- kendrick %>% unnest_tokens(word, lyrics)
 cleaned_kendrick <- tidy_kendrick %>%
         anti_join(stop_words)
 
-# Check out the most common words in the corpus.
-cleaned_kendrick %>%
-        count(word, sort = TRUE) %>% 
-        head()
-```
-
-    ## # A tibble: 6 × 2
-    ##    word     n
-    ##   <chr> <int>
-    ## 1 nigga   264
-    ## 2  love   178
-    ## 3  fuck   159
-    ## 4  shit   155
-    ## 5 bitch   144
-    ## 6  feel   131
-
-``` r
-# Get the sentiment of the Bing lexicon.
+# Get the sentiment of words in the Bing lexicon.
 bing <- get_sentiments("bing")
 
 # Get the sentiment across the tracks.
@@ -102,8 +95,10 @@ kendrick <- inner_join(kendrick, kendrick_sentiment)
 kendrick <- kendrick %>% mutate(smart_sentiment = (sentiment + (valence*2)-1)/2)
 ```
 
+We have the sentiment for each song, so let's plot it across Kendrick's discography.
+
 ``` r
-# See how the sentiment changes across the post order.
+# See how the sentiment changes across the albums.
 sentiment_plot <- ggplot(kendrick, aes(x = track_name, y = smart_sentiment, color = smart_sentiment)) +
         geom_hline(aes(yintercept=1, color=1), linetype="dashed", show.legend = FALSE) +
         geom_hline(aes(yintercept=0.5, color=0.5), linetype="dashed", show.legend = FALSE) +
@@ -121,7 +116,6 @@ sentiment_plot <- ggplot(kendrick, aes(x = track_name, y = smart_sentiment, colo
               axis.title.x=element_text(size = 9, angle=180),
               axis.title.y=element_text(size = 9, angle = 90),
               strip.text = element_text(size = 7, angle = 90, vjust=0)) +
-        #labs(title = "Sentiment in Kendrick Lamar's Music and Lyrics") +
         xlab("") +
         ylab("Sentiment in Kendrick Lamar's Music and Lyrics") +
         scale_y_continuous(limits = c(-1,1),
@@ -132,22 +126,31 @@ sentiment_plot <- ggplot(kendrick, aes(x = track_name, y = smart_sentiment, colo
                                       "very positive"))
 
 # Save the plot.
-ggsave("../data/sentiment_plot.png", width = 6, height = 5)
+ggsave("../results/sentiment_plot.png", width = 6, height = 5)
 
 # Read it back in.
-sentiment_plot <- image_read('../data/sentiment_plot.png')
+sentiment_plot <- image_read('../results/sentiment_plot.png')
 
 # Rotate it.
 sentiment_plot <- image_rotate(sentiment_plot, 90)
 
 # Save it again.
-image_write(sentiment_plot, path = "../data/sentiment_plot.png", format = "png")
+image_write(sentiment_plot, path = "../results/sentiment_plot.png", format = "png")
 ```
 
-![](../data/sentiment_plot.png)
+![](../results/sentiment_plot.png)
+
+You might wonder which words are contributing most to these positive and negative sentiment scores. We'll see this below, but first, a warning: Kendrick is profane.
 
 Topic Modelling
 ---------------
+
+Let's see if we can find any common themes in Kendrick's lyrics. Rather than doing something too fancy, we'll use something fairly simple called the Term Frequency-Inverse Document Frequency, of tf-idf. It is comprised of two parts:
+
+-   The *term frequency* is the frequency at which a term appears in a given document.
+-   The *inverse document frequency* is the frequency at which that term appears across all documents. (It's the proportion of documents which contain the word at least once.)
+
+So, tf-idf tells us which words appear frequently in one set of documents but not so much in others. If a word is barely used in any of the documents, then it will have a low tf-idf. Similarly, if a word shows up in *many* of the documents, then it will have a low tf-idf. What counts is whether it shows up consistently in one set of documents but not all the others. Let's take a look at the words with the highest tf-idf for each album.
 
 ``` r
 # Get the word counts for each track.
@@ -217,10 +220,12 @@ album_words %>%
     ## #   tf <dbl>, idf <dbl>, tf_idf <dbl>
 
 ``` r
+# Reset the factor levels according to the tf-idf
 plot_albums <- album_words %>%
         arrange(desc(tf_idf)) %>%
         mutate(word = factor(word, levels = rev(unique(word))))
 
+# Plot the words for all the albums.
 plot_albums %>% 
         group_by(album_name) %>%
         top_n(5) %>%
@@ -229,7 +234,7 @@ plot_albums %>%
         geom_col(show.legend = FALSE, alpha = 0.8) +
         labs(x = NULL,
              y = "Term Frequency-Inverse Document Frequency",
-             title = "Most representative words across Kendrick Lamar's Discography") +
+             title = "Representative words across Kendrick Lamar's discography") +
         facet_wrap(~album_name, nrow = 1, scales = "free") +
         scale_fill_manual(values = c("purple", "darkblue", "darkgrey", "darkgreen", "red")) +
         theme_tufte(base_family = "GillSans") +
@@ -239,8 +244,7 @@ plot_albums %>%
 
 ![](kendrick_files/figure-markdown_github/tfidf-1.png)
 
-Term Frequency-Inverse Document Frequency
------------------------------------------
+Let's use word clouds to see more of the words that are important for each album.
 
 ``` r
 font <- 1
@@ -268,7 +272,6 @@ dev.off()
     ##                 2
 
 ``` r
-?text
 # Word cloud for good kid
 pal2 <- brewer.pal(7, "Blues")
 pal2 <- pal2[-(1:2)]
@@ -372,8 +375,10 @@ ggsave(file="../results/album_top_words.png", g, height = unit(5, "in"), width =
 
 ![](../results/album_top_words.png)
 
-More danceable songs have fewer annotations per word
-----------------------------------------------------
+Correlations between Spotify data and Genius data
+-------------------------------------------------
+
+The fact that we've joined the Spotify data with the Genius data means we have an opportunity to see whether any of the variables from one dataset are correlated with variables from the other. Here are a couple interesting correlations I found:
 
 ``` r
 # Danceable songs are more likely to have a higher number of pageviews.
@@ -447,9 +452,15 @@ summary(lm(I(annotations/song_word_count) ~ danceability, kendrick))
     ## Multiple R-squared:  0.1413, Adjusted R-squared:  0.1278 
     ## F-statistic: 10.53 on 1 and 64 DF,  p-value: 0.001871
 
-References:
+This is almost a bit sad: people come to Genius to look for analysis of the danceable Kendrick songs they hear on the radio, but those danceable songs have fewer annotations per word than average.
+
+References
+----------
 
 <http://rcharlie.com/2017-02-16-fitteR-happieR/> <http://tidytextmining.com/tfidf.html#the-bind_tf_idf-function> <https://cran.r-project.org/web/packages/tidytext/vignettes/tf_idf.html> <https://cran.r-project.org/web/packages/tidytext/vignettes/topic_modeling.html>
+
+Session Info
+------------
 
 ``` r
 sessionInfo()
