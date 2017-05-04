@@ -42,7 +42,7 @@ kendrick <- kendrick %>% filter(album_name != "Overly Dedicated")
 # Get word counts for each album. This might be useful later.
 album_word_counts <- kendrick %>% group_by(album_name) %>% summarise(word_count = sum(song_word_count))
 
-# Fix the factor levels.
+# Fix the factor levels for the tracks.
 kendrick$track_name <- factor(kendrick$track_name, levels = as.character(kendrick$track_name))
 ```
 
