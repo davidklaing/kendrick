@@ -2,7 +2,7 @@
 
 David Laing, May 2017
 
-This repository contains some analysis and visualization of Kendrick Lamar's music, using data from Spotify's and Genius's APIs. The script I used to query the data, which is adapted from RCharlie's post [fitteR happieR](http://rcharlie.com/2017-02-16-fitteR-happieR/), can be found [here](https://github.com/laingdk/kendrick/blob/master/src/scrape_kendrick.R). If you'd like to download the data yourself, you can find it [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv).
+This repository contains some analysis and visualization of Kendrick Lamar's music, using data from Spotify's and Genius's APIs. The script I used to query the data, which is adapted from RCharlie's post [fitteR happieR](http://rcharlie.com/2017-02-16-fitteR-happieR/), can be found [here](https://github.com/laingdk/kendrick/blob/master/src/scrape_kendrick.R). If you'd like to download the data yourself, you can find it [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv). My knitted markdown file is [here](https://github.com/laingdk/kendrick/blob/master/results/kendrick.md).
 
 ## Dependencies
 
