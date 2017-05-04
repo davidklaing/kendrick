@@ -2,12 +2,14 @@ library(tidyverse)
 library(stringr)
 library(httr)
 library(lubridate)
+library(assertthat)
+library(rvest)
 
 ##### IMPORTANT: Copy and paste your access tokens here.
 
-spotify_client_id <- 'fa98555660084d0b82471bcccedd65c8'
-spotify_client_secret <- '7319c725f5c0469082b7ac663f02065e'
-genius_token <- '0lokoRjkqEptGnYolES38msiGzQrkzaN3lVuw9yRnJ709vbCqtubHkD_8OB5f6Jc'
+spotify_client_id <- 'xxxxxxxxxx'
+spotify_client_secret <- 'xxxxxxxxxx'
+genius_token <- 'xxxxxxxxxx'
 
 ##### Spotify info.
 
@@ -151,7 +153,7 @@ requestURL <- paste0(baseURL, genius_artists$artist_id[1], '/songs')
 track_lyric_urls <- list()
 i <- 1
 while (i > 0) {
-        tmp <- GET(requestURL, query = list(access_token = token, per_page = 50, page = i)) %>% content %>% .$response
+        tmp <- GET(requestURL, query = list(access_token = genius_token, per_page = 50, page = i)) %>% content %>% .$response
         track_lyric_urls <- c(track_lyric_urls, tmp$songs)
         if (!is.null(tmp$next_page)) {
                 i <- tmp$next_page
@@ -218,7 +220,7 @@ filtered_track_lyric_titles[filtered_track_lyric_titles == "XXX."] <- "XXX. FEAT
 
 # Check to make sure all of the album songs are now present in the filtered track lyric titles.
 # spotify_df$track_name[!spotify_df$track_name %in% filtered_track_lyric_titles]
-assert(length(spotify_df$track_name[spotify_df$track_name %in% filtered_track_lyric_titles]) == length(spotify_df$track_name))
+assert_that(length(spotify_df$track_name[spotify_df$track_name %in% filtered_track_lyric_titles]) == length(spotify_df$track_name))
 
 # Keep only the urls for the songs in the full-length albums.
 track_urls <- filtered_track_lyric_urls[filtered_track_lyric_titles %in% spotify_df$track_name]
@@ -227,9 +229,9 @@ track_annotations <- filtered_track_annotations[filtered_track_lyric_titles %in%
 track_pageviews <- filtered_track_pageviews[filtered_track_lyric_titles %in% spotify_df$track_name]
 
 # Make sure they're the same length.
-assert(length(track_urls) == length(track_titles))
-assert(length(track_urls) == length(track_annotations))
-assert(length(track_urls) == length(track_pageviews))
+assert_that(length(track_urls) == length(track_titles))
+assert_that(length(track_urls) == length(track_annotations))
+assert_that(length(track_urls) == length(track_pageviews))
 
 # Scrape the lyrics.
 lyric_scraper <- function(url) {
@@ -290,3 +292,5 @@ track_df$song_word_count <- word_count
 
 # Save it all to csv.
 write.csv(track_df, "../data/scraped_kendrick_data.csv")
+
+print("Done.")
