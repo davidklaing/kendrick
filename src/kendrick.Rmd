@@ -165,7 +165,7 @@ image_write(sentiment_plot, path = "../results/sentiment_plot.png", format = "pn
 
 You might wonder which words are contributing most to these positive and negative sentiment scores. We'll see this below, but first, a warning: Kendrick is profane.
 
-```{r sentiment_contributions, include=FALSE, echo=FALSE}
+```{r sentiment_contributions, message=FALSE}
 # Get the words contribute most to each sentiment.
 bing_word_counts <- tidy_kendrick %>%
         inner_join(bing) %>%
@@ -177,7 +177,7 @@ cleaned_kendrick %>%
         count(word) %>%
         with(wordcloud(word, n, max.words = 100))
 
-# View them.
+# View the words contribute most to each sentiment
 bing_word_counts %>%
         filter(n > 30) %>%
         mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
@@ -217,7 +217,7 @@ word_counts <- tidy_kendrick %>%
         left_join(album_word_counts)
 
 # Take a look.
-head(word_counts)
+head(word_counts) %>% knitr::kable()
 
 # Get the tf-idf
 album_words <- word_counts %>%
@@ -227,14 +227,14 @@ album_words <- word_counts %>%
 album_words %>%
         select(-word_count) %>%
         arrange(desc(tf_idf)) %>% 
-        head()
+        head() %>% knitr::kable()
 
 # Look at the words with the highest tf-idf within good kid, m.A.A.d city.
 album_words %>%
         filter(album_name == "good kid, m.A.A.d city") %>%
         select(-word_count) %>%
         arrange(desc(tf_idf)) %>% 
-        head()
+        head() %>% knitr::kable()
 
 # Reset the factor levels according to the tf-idf
 plot_albums <- album_words %>%

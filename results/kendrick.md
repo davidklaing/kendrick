@@ -142,6 +142,49 @@ image_write(sentiment_plot, path = "../results/sentiment_plot.png", format = "pn
 
 You might wonder which words are contributing most to these positive and negative sentiment scores. We'll see this below, but first, a warning: Kendrick is profane.
 
+``` r
+# Get the words contribute most to each sentiment.
+bing_word_counts <- tidy_kendrick %>%
+        inner_join(bing) %>%
+        count(word, sentiment, sort = TRUE) %>%
+        ungroup()
+
+# See a word cloud of the top words by word count.
+cleaned_kendrick %>%
+        count(word) %>%
+        with(wordcloud(word, n, max.words = 100))
+```
+
+![](kendrick_files/figure-markdown_github/sentiment_contributions-1.png)
+
+``` r
+# View the words contribute most to each sentiment
+bing_word_counts %>%
+        filter(n > 30) %>%
+        mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+        mutate(word = reorder(word, n)) %>%
+        ggplot(aes(word, n, fill = sentiment)) +
+        geom_bar(stat = "identity", alpha = 0.8) +
+        scale_fill_manual(values = c("red", "#3CDE00")) +
+        theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
+        ylab("Contribution to sentiment") +
+        coord_flip()
+```
+
+![](kendrick_files/figure-markdown_github/sentiment_contributions-2.png)
+
+``` r
+# Colored by sentiment.
+tidy_kendrick %>%
+        inner_join(bing) %>%
+        count(word, sentiment, sort = TRUE) %>%
+        acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+        comparison.cloud(colors = c("red", "#3CDE00"),
+                         max.words = 100, title.size = 2)
+```
+
+![](kendrick_files/figure-markdown_github/sentiment_contributions-3.png)
+
 Topic Modelling
 ---------------
 
@@ -162,18 +205,17 @@ word_counts <- tidy_kendrick %>%
         left_join(album_word_counts)
 
 # Take a look.
-head(word_counts)
+head(word_counts) %>% knitr::kable()
 ```
 
-    ## # A tibble: 6 × 6
-    ##               album_name track_number track_name  word     n word_count
-    ##                   <fctr>        <int>     <fctr> <chr> <int>      <int>
-    ## 1                  DAMN.            8    HUMBLE.   hol    64       8531
-    ## 2 good kid, m.A.A.d city           11       Real  real    50      11644
-    ## 3 good kid, m.A.A.d city           11       Real  love    48      11644
-    ## 4                  DAMN.            5      FEEL.  feel    44       8531
-    ## 5                  DAMN.            3       YAH.   yah    43       8531
-    ## 6             Section.80            2    Hol' Up  hold    41       9181
+| album\_name            |  track\_number| track\_name | word |    n|  word\_count|
+|:-----------------------|--------------:|:------------|:-----|----:|------------:|
+| DAMN.                  |              8| HUMBLE.     | hol  |   64|         8531|
+| good kid, m.A.A.d city |             11| Real        | real |   50|        11644|
+| good kid, m.A.A.d city |             11| Real        | love |   48|        11644|
+| DAMN.                  |              5| FEEL.       | feel |   44|         8531|
+| DAMN.                  |              3| YAH.        | yah  |   43|         8531|
+| Section.80             |              2| Hol' Up     | hold |   41|         9181|
 
 ``` r
 # Get the tf-idf
@@ -184,19 +226,17 @@ album_words <- word_counts %>%
 album_words %>%
         select(-word_count) %>%
         arrange(desc(tf_idf)) %>% 
-        head()
+        head() %>% knitr::kable()
 ```
 
-    ## # A tibble: 6 × 8
-    ##             album_name track_number                track_name     word
-    ##                 <fctr>        <int>                    <fctr>    <chr>
-    ## 1                DAMN.            3                      YAH.      yah
-    ## 2 untitled unmastered.            7 untitled 07 | 2014 - 2016 levitate
-    ## 3 untitled unmastered.            6 untitled 06 | 06.30.2014.  explain
-    ## 4           Section.80            7         Ronald Reagan Era     woop
-    ## 5  To Pimp A Butterfly           16                Mortal Man      fan
-    ## 6 untitled unmastered.            7 untitled 07 | 2014 - 2016      bam
-    ## # ... with 4 more variables: n <int>, tf <dbl>, idf <dbl>, tf_idf <dbl>
+| album\_name          |  track\_number| track\_name               | word     |    n|         tf|       idf|    tf\_idf|
+|:---------------------|--------------:|:--------------------------|:---------|----:|----------:|---------:|----------:|
+| DAMN.                |              3| YAH.                      | yah      |   43|  0.0128052|  1.791759|  0.0229439|
+| untitled unmastered. |              7| untitled 07 | 2014 - 2016 | levitate |   28|  0.0167264|  1.098612|  0.0183758|
+| untitled unmastered. |              6| untitled 06 | 06.30.2014. | explain  |   20|  0.0119474|  1.098612|  0.0131256|
+| Section.80           |              7| Ronald Reagan Era         | woop     |   24|  0.0072007|  1.791759|  0.0129020|
+| To Pimp A Butterfly  |             16| Mortal Man                | fan      |   31|  0.0062174|  1.791759|  0.0111401|
+| untitled unmastered. |              7| untitled 07 | 2014 - 2016 | bam      |   10|  0.0059737|  1.791759|  0.0107035|
 
 ``` r
 # Look at the words with the highest tf-idf within good kid, m.A.A.d city.
@@ -204,20 +244,17 @@ album_words %>%
         filter(album_name == "good kid, m.A.A.d city") %>%
         select(-word_count) %>%
         arrange(desc(tf_idf)) %>% 
-        head()
+        head() %>% knitr::kable()
 ```
 
-    ## # A tibble: 6 × 8
-    ##               album_name track_number
-    ##                   <fctr>        <int>
-    ## 1 good kid, m.A.A.d city           10
-    ## 2 good kid, m.A.A.d city            9
-    ## 3 good kid, m.A.A.d city            6
-    ## 4 good kid, m.A.A.d city            9
-    ## 5 good kid, m.A.A.d city            4
-    ## 6 good kid, m.A.A.d city            5
-    ## # ... with 6 more variables: track_name <fctr>, word <chr>, n <int>,
-    ## #   tf <dbl>, idf <dbl>, tf_idf <dbl>
+| album\_name            |  track\_number| track\_name                               | word   |    n|        tf|        idf|    tf\_idf|
+|:-----------------------|--------------:|:------------------------------------------|:-------|----:|---------:|----------:|----------:|
+| good kid, m.A.A.d city |             10| Sing About Me, I'm Dying Of Thirst        | thirst |   16|  0.003696|  1.7917595|  0.0066223|
+| good kid, m.A.A.d city |              9| Swimming Pools (Drank) - Extended Version | drank  |   32|  0.007392|  0.6931472|  0.0051237|
+| good kid, m.A.A.d city |              6| Poetic Justice                            | poetic |   12|  0.002772|  1.7917595|  0.0049668|
+| good kid, m.A.A.d city |              9| Swimming Pools (Drank) - Extended Version | dive   |   12|  0.002772|  1.7917595|  0.0049668|
+| good kid, m.A.A.d city |              4| The Art of Peer Pressure                  | doo    |    9|  0.002079|  1.7917595|  0.0037251|
+| good kid, m.A.A.d city |              5| Money Trees                               | bish   |   14|  0.003234|  1.0986123|  0.0035529|
 
 ``` r
 # Reset the factor levels according to the tf-idf
@@ -495,9 +532,9 @@ sessionInfo()
     ## [10] DBI_0.5-1          plyr_1.8.4         munsell_0.4.3     
     ## [13] gtable_0.2.0       psych_1.6.9        evaluate_0.10     
     ## [16] labeling_0.3       knitr_1.15.1       parallel_3.3.1    
-    ## [19] broom_0.4.1        tokenizers_0.1.4   Rcpp_0.12.9.2     
-    ## [22] backports_1.0.4    mnormt_1.5-4       digest_0.6.12     
-    ## [25] stringi_1.1.2      rprojroot_1.1      tools_3.3.1       
-    ## [28] magrittr_1.5       lazyeval_0.2.0     janeaustenr_0.1.4 
-    ## [31] Matrix_1.2-6       assertthat_0.1     rmarkdown_1.2.9000
-    ## [34] R6_2.1.3           nlme_3.1-128
+    ## [19] highr_0.6          broom_0.4.1        tokenizers_0.1.4  
+    ## [22] Rcpp_0.12.9.2      backports_1.0.4    mnormt_1.5-4      
+    ## [25] digest_0.6.12      stringi_1.1.2      rprojroot_1.1     
+    ## [28] tools_3.3.1        magrittr_1.5       lazyeval_0.2.0    
+    ## [31] janeaustenr_0.1.4  Matrix_1.2-6       assertthat_0.1    
+    ## [34] rmarkdown_1.2.9000 R6_2.1.3           nlme_3.1-128
