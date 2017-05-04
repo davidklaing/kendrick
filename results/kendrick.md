@@ -152,7 +152,7 @@ bing_word_counts <- tidy_kendrick %>%
 # See a word cloud of the top words by word count.
 cleaned_kendrick %>%
         count(word) %>%
-        with(wordcloud(word, n, max.words = 100))
+        with(wordcloud(word, n, max.words = 100, random.order = F))
 ```
 
 ![](kendrick_files/figure-markdown_github/sentiment_contributions-1.png)
@@ -188,7 +188,9 @@ tidy_kendrick %>%
 Topic Modelling
 ---------------
 
-Let's see if we can find any common themes in Kendrick's lyrics. Rather than doing something too fancy, we'll use something fairly simple called the Term Frequency-Inverse Document Frequency, of tf-idf. It is comprised of two parts:
+From the visualizations above, we have some idea of what Kendrick likes to rap about. But we could learn even more if we could peel away the extremely common words that are present in most songs, and find the underlying words that are unique to each song and album.
+
+We'll use something called the Term Frequency-Inverse Document Frequency, of tf-idf. It is comprised of two parts:
 
 -   The *term frequency* is the frequency at which a term appears in a given document.
 -   The *inverse document frequency* is the frequency at which that term appears across all documents. (It's the proportion of documents which contain the word at least once.)
