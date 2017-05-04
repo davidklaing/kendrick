@@ -207,56 +207,39 @@ word_counts <- tidy_kendrick %>%
         left_join(album_word_counts)
 
 # Take a look.
-head(word_counts) %>% knitr::kable()
+head(word_counts) %>% select(album_name, track_name, n) %>% knitr::kable()
 ```
 
-| album\_name            |  track\_number| track\_name | word |    n|  word\_count|
-|:-----------------------|--------------:|:------------|:-----|----:|------------:|
-| DAMN.                  |              8| HUMBLE.     | hol  |   64|         8531|
-| good kid, m.A.A.d city |             11| Real        | real |   50|        11644|
-| good kid, m.A.A.d city |             11| Real        | love |   48|        11644|
-| DAMN.                  |              5| FEEL.       | feel |   44|         8531|
-| DAMN.                  |              3| YAH.        | yah  |   43|         8531|
-| Section.80             |              2| Hol' Up     | hold |   41|         9181|
+| album\_name            | track\_name |    n|
+|:-----------------------|:------------|----:|
+| DAMN.                  | HUMBLE.     |   64|
+| good kid, m.A.A.d city | Real        |   50|
+| good kid, m.A.A.d city | Real        |   48|
+| DAMN.                  | FEEL.       |   44|
+| DAMN.                  | YAH.        |   43|
+| Section.80             | Hol' Up     |   41|
 
 ``` r
 # Get the tf-idf
 album_words <- word_counts %>%
         bind_tf_idf(word, album_name, n)
 
-# Look at the words with the highest tf-idf.
-album_words %>%
-        select(-word_count) %>%
-        arrange(desc(tf_idf)) %>% 
-        head() %>% knitr::kable()
-```
-
-| album\_name          |  track\_number| track\_name               | word     |    n|         tf|       idf|    tf\_idf|
-|:---------------------|--------------:|:--------------------------|:---------|----:|----------:|---------:|----------:|
-| DAMN.                |              3| YAH.                      | yah      |   43|  0.0128052|  1.791759|  0.0229439|
-| untitled unmastered. |              7| untitled 07 | 2014 - 2016 | levitate |   28|  0.0167264|  1.098612|  0.0183758|
-| untitled unmastered. |              6| untitled 06 | 06.30.2014. | explain  |   20|  0.0119474|  1.098612|  0.0131256|
-| Section.80           |              7| Ronald Reagan Era         | woop     |   24|  0.0072007|  1.791759|  0.0129020|
-| To Pimp A Butterfly  |             16| Mortal Man                | fan      |   31|  0.0062174|  1.791759|  0.0111401|
-| untitled unmastered. |              7| untitled 07 | 2014 - 2016 | bam      |   10|  0.0059737|  1.791759|  0.0107035|
-
-``` r
 # Look at the words with the highest tf-idf within good kid, m.A.A.d city.
 album_words %>%
         filter(album_name == "good kid, m.A.A.d city") %>%
         select(-word_count) %>%
         arrange(desc(tf_idf)) %>% 
-        head() %>% knitr::kable()
+        head() %>% select(album_name, track_name, tf_idf) %>% knitr::kable()
 ```
 
-| album\_name            |  track\_number| track\_name                               | word   |    n|        tf|        idf|    tf\_idf|
-|:-----------------------|--------------:|:------------------------------------------|:-------|----:|---------:|----------:|----------:|
-| good kid, m.A.A.d city |             10| Sing About Me, I'm Dying Of Thirst        | thirst |   16|  0.003696|  1.7917595|  0.0066223|
-| good kid, m.A.A.d city |              9| Swimming Pools (Drank) - Extended Version | drank  |   32|  0.007392|  0.6931472|  0.0051237|
-| good kid, m.A.A.d city |              6| Poetic Justice                            | poetic |   12|  0.002772|  1.7917595|  0.0049668|
-| good kid, m.A.A.d city |              9| Swimming Pools (Drank) - Extended Version | dive   |   12|  0.002772|  1.7917595|  0.0049668|
-| good kid, m.A.A.d city |              4| The Art of Peer Pressure                  | doo    |    9|  0.002079|  1.7917595|  0.0037251|
-| good kid, m.A.A.d city |              5| Money Trees                               | bish   |   14|  0.003234|  1.0986123|  0.0035529|
+| album\_name            | track\_name                               |    tf\_idf|
+|:-----------------------|:------------------------------------------|----------:|
+| good kid, m.A.A.d city | Sing About Me, I'm Dying Of Thirst        |  0.0066223|
+| good kid, m.A.A.d city | Swimming Pools (Drank) - Extended Version |  0.0051237|
+| good kid, m.A.A.d city | Poetic Justice                            |  0.0049668|
+| good kid, m.A.A.d city | Swimming Pools (Drank) - Extended Version |  0.0049668|
+| good kid, m.A.A.d city | The Art of Peer Pressure                  |  0.0037251|
+| good kid, m.A.A.d city | Money Trees                               |  0.0035529|
 
 ``` r
 # Reset the factor levels according to the tf-idf

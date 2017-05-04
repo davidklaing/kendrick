@@ -219,24 +219,18 @@ word_counts <- tidy_kendrick %>%
         left_join(album_word_counts)
 
 # Take a look.
-head(word_counts) %>% knitr::kable()
+head(word_counts) %>% select(album_name, track_name, n) %>% knitr::kable()
 
 # Get the tf-idf
 album_words <- word_counts %>%
         bind_tf_idf(word, album_name, n)
-
-# Look at the words with the highest tf-idf.
-album_words %>%
-        select(-word_count) %>%
-        arrange(desc(tf_idf)) %>% 
-        head() %>% knitr::kable()
 
 # Look at the words with the highest tf-idf within good kid, m.A.A.d city.
 album_words %>%
         filter(album_name == "good kid, m.A.A.d city") %>%
         select(-word_count) %>%
         arrange(desc(tf_idf)) %>% 
-        head() %>% knitr::kable()
+        head() %>% select(album_name, track_name, tf_idf) %>% knitr::kable()
 
 # Reset the factor levels according to the tf-idf
 plot_albums <- album_words %>%
