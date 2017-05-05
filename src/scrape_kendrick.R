@@ -7,9 +7,9 @@ library(rvest)
 
 ##### IMPORTANT: Copy and paste your access tokens here.
 
-spotify_client_id <- 'fa98555660084d0b82471bcccedd65c8'
-spotify_client_secret <- '7319c725f5c0469082b7ac663f02065e'
-genius_token <- 'u23R5T-1xh8yIhEU4gIyqaa0XCcq1_-TgM02jGUQ7mLh1cB7lYOalEqYXbSglOcj'
+spotify_client_id <- 'xxxxxxxxxx'
+spotify_client_secret <- 'xxxxxxxxxx'
+genius_token <- 'xxxxxxxxxx'
 
 ##### Spotify info.
 
