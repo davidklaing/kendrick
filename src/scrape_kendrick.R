@@ -7,9 +7,9 @@ library(rvest)
 
 ##### IMPORTANT: Copy and paste your access tokens here.
 
-spotify_client_id <- 'xxxxxxxxxx'
-spotify_client_secret <- 'xxxxxxxxxx'
-genius_token <- 'xxxxxxxxxx'
+spotify_client_id <- 'fa98555660084d0b82471bcccedd65c8'
+spotify_client_secret <- '7319c725f5c0469082b7ac663f02065e'
+genius_token <- 'u23R5T-1xh8yIhEU4gIyqaa0XCcq1_-TgM02jGUQ7mLh1cB7lYOalEqYXbSglOcj'
 
 ##### Spotify info.
 
@@ -167,6 +167,7 @@ filtered_track_lyric_urls <- c()
 filtered_track_lyric_titles <- c()
 filtered_track_annotations <- c()
 filtered_track_pageviews <- c()
+filtered_track_contributors <- c()
 index <- c()
 
 # Keep only the songs where Kendrick is the primary artist.
@@ -179,6 +180,11 @@ for (i in 1:length(track_lyric_urls)) {
                         filtered_track_pageviews <- append(filtered_track_pageviews, track_lyric_urls[[i]]$stats$pageviews)
                 } else {
                         filtered_track_pageviews <- append(filtered_track_pageviews, NA)
+                }
+                if (!is.null(track_lyric_urls[[i]]$stats$contributors)) {
+                        filtered_track_contributors <- append(filtered_track_contributors, track_lyric_urls[[i]]$stats$contributors)
+                } else {
+                        filtered_track_contributors <- append(filtered_track_contributors, NA)
                 }
                 index <- append(index, i)
         }
@@ -227,11 +233,13 @@ track_urls <- filtered_track_lyric_urls[filtered_track_lyric_titles %in% spotify
 track_titles <- filtered_track_lyric_titles[filtered_track_lyric_titles %in% spotify_df$track_name]
 track_annotations <- filtered_track_annotations[filtered_track_lyric_titles %in% spotify_df$track_name]
 track_pageviews <- filtered_track_pageviews[filtered_track_lyric_titles %in% spotify_df$track_name]
+track_contributors <- filtered_track_contributors[filtered_track_lyric_titles %in% spotify_df$track_name]
 
 # Make sure they're the same length.
 assert_that(length(track_urls) == length(track_titles))
 assert_that(length(track_urls) == length(track_annotations))
 assert_that(length(track_urls) == length(track_pageviews))
+assert_that(length(track_urls) == length(track_contributors))
 
 # Scrape the lyrics.
 lyric_scraper <- function(url) {
@@ -259,7 +267,8 @@ genius_df <- map_df(1:length(track_urls), function(x) {
                 track_name = track_titles[x],
                 lyrics = lyrics,
                 annotations = track_annotations[x],
-                pageviews = track_pageviews[x]
+                pageviews = track_pageviews[x],
+                contributors = track_contributors[x]
         )
         
         return(tots)
