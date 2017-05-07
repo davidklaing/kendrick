@@ -132,7 +132,11 @@ image_write(valence_plot, path = "../results/valence_plot.png", format = "png")
 
 ![](../results/valence_plot.png)
 
-I won't dwell too much on musical valence, since I think it's incomplete. But I will remark now that the graph above, as well as the ones I'll show you below, give some insight into the narrative structure of each album. One thing that is consistently clear, regardless of the metric of sentiment, is that Kendrick likes to oscillate between bright and dark.
+Kendrick fans will recognize many of these scores as vaguely correct, but several of them are not. For example, the highest-scoring song was [Blow My High (Members Only)](https://genius.com/Kendrick-lamar-blow-my-high-members-only-lyrics):
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/n4bm7hqu_GE" frameborder="0" allowfullscreen></iframe>
+
+While it's by no means a sad or even angry song, it doesn't reach emotional highs anywhere near what you'd expect from the Most Positive Song in Kendrick's career. So, Spotify's valence variable is incomplete as a measure of overall sentiment.
 
 I was interested in the sentiment in the lyrics alone, but this time I had to compute it myself. I joined the lyrics with the Bing lexicon — a list of words which are labelled by humans as positive or negative — and subtracted the negative words from the positive ones to get a general measure of lyrical sentiment. In each song, I normalized the sentiment by dividing by the total number of words that were present in both the song and the Bing lexicon. Below I plot the lyrical sentiment across albums.
 
@@ -212,7 +216,7 @@ Despite its eerie melody and tragic story (revealed in the final line), the song
 
 The verses also repeat the words, "beautiful," "beauty," "wonderful blessing," "heaven," and "smile." 
 
-Another problem with this measure of lyrical sentiment is that it always treats profanity as being negative. And Kendrick is very profane. If you're up for it, you can see a word cloud of his most used words [here]().
+Another problem with this measure of lyrical sentiment is that it always treats profanity as being negative, which isn't always accurate in rap music. And Kendrick is very profane. If you're up for it, you can see a word cloud of his most used words [here](https://github.com/laingdk/kendrick/blob/master/results/kendrick_wordcloud.png).
 
 ```{r wordcloud, include = FALSE, echo = FALSE}
 png("../results/kendrick_wordcloud.png", width=5, height=5, units="in", res=300)
@@ -226,7 +230,7 @@ wordcloud <- cleaned_kendrick %>%
 dev.off()
 ```
 
-We have the sentiment for each song, so let's plot it across Kendrick's discography.
+Still, for the most part lyrical sentiment is capturing the general mood of the lyrics. To get a more complete measure of sentiment, I converted the musical and lyrical sentiment scores to the same scale, then took the average between them. I think the plot below gives the best generalization of musical and lyrical sentiment.
 
 ```{r sentiment_viz, fig.width=11, fig.height=5, warning=FALSE, message=FALSE}
 # Transform the valence to the same scale as the sentiment.
@@ -259,7 +263,7 @@ sentiment_plot <- ggplot(kendrick, aes(x = track_name, y = smart_sentiment, colo
               axis.title.y=element_text(size = 9, angle = 90),
               strip.text = element_text(size = 7, angle = 90, vjust = 0)) +
         xlab("") +
-        ylab("Sentiment in Kendrick Lamar's music and lyrics") +
+        ylab("General sentiment in Kendrick Lamar's music and lyrics") +
         scale_y_continuous(limits = c(-1,1),
                            labels = c("very negative", 
                                       "negative", 
@@ -281,6 +285,8 @@ image_write(sentiment_plot, path = "../results/sentiment_plot.png", format = "pn
 ```
 
 ![](../results/sentiment_plot.png)
+
+Now here's where things get interesting. I decided to see which songs had the greatest differences between their musical sentiment (as defined by Spotify's "valence") and my measure of lyrical sentiment. For example, I wanted to know which songs sound happy but have sad lyrics, or vice versa. I was also curious to know which songs had the least differences between musical and lyrical sentiment; these would be the most self-consistent, the least ironic.
 
 ```{r sent_val_dif}
 # Plot the difference between lyrical sentiment and musical valence.
@@ -317,40 +323,52 @@ image_write(sent_val_dif_plot, path = "../results/sent_val_dif_plot.png", format
 
 ![](../results/sent_val_dif_plot.png)
 
-You might wonder which words are contributing most to these positive and negative sentiment scores. We'll see this below, but first, a warning: Kendrick is profane.
+No Make-up was identified as being especially inconsistent in its sound and lyrics, as predicted. Another sad song with positive lyrics is [Real](https://genius.com/Kendrick-lamar-real-lyrics), in which Kendrick uses the word "love" 49 times:
 
-```{r sentiment_contributions, message=FALSE}
-# Get the words contribute most to each sentiment.
-bing_word_counts <- tidy_kendrick %>%
-        inner_join(bing) %>%
-        count(word, sentiment, sort = TRUE) %>%
-        ungroup()
+<iframe width="560" height="315" src="https://www.youtube.com/embed/DDau48PysuU" frameborder="0" allowfullscreen></iframe>
 
-# See a word cloud of the top words by word count.
-cleaned_kendrick %>%
-        count(word) %>%
-        with(wordcloud(word, n, max.words = 100, random.order = F))
+So, the combined sentiment score successfully reeled in the mistakes made by the lyric sentiment score.
 
-# View the words contribute most to each sentiment
-bing_word_counts %>%
-        filter(n > 30) %>%
-        mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
-        mutate(word = reorder(word, n)) %>%
-        ggplot(aes(word, n, fill = sentiment)) +
-        geom_bar(stat = "identity", alpha = 0.8) +
-        scale_fill_manual(values = c("red", "#3CDE00")) +
-        theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
-        ylab("Contribution to sentiment") +
-        coord_flip()
+One the right side of the graph, we can see that Blow My High (Members Only) was identified as being the song with the greatest positive difference between musical sentiment and lyrical sentiment. So the combined sentiment score was equally successful in correcting for the mistakes in Spotify's measure of musical valence.
 
-# Colored by sentiment.
-tidy_kendrick %>%
-        inner_join(bing) %>%
-        count(word, sentiment, sort = TRUE) %>%
-        acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-        comparison.cloud(colors = c("red", "#3CDE00"),
-                         max.words = 100, title.size = 2)
+The other thing we can see in the plot above is the songs that are the most self-consistent — the ones with the least differences between musical sentiment and lyrical sentiment. If you're a Kendrick fan and you scan through the songs with the smallest bars, you might notice something interesting: most of them are on the high end for general popularity. Could it be that songs with emotionally consistent lyrics and sounds are more likely to be hits?
+
+I tried plotting the number of pageviews on Genius against the absolute difference between musical and lyrical sentiment.
+
+```{r finale1}
+ggplot(kendrick) +
+        geom_point(aes(x = sent_val_dif, y = pageviews), alpha = 0.6) +
+        theme_few(base_family = 'GillSans') +
+        scale_y_continuous(labels = comma) +
+        labs(title="Pageviews of Kendrick Lamar's songs on genius.com,\nas predicted by musical/lyrical consistency") +
+        ylab("Pageviews on genius.com") +
+        xlab("Absolute difference between musical sentiment and lyrical sentiment")
 ```
+
+This looked like a pretty strong pattern to me, but I realized that I should log-transform the pageviews to get more consistent dispersion.
+
+```{r finale2}
+ggplot(kendrick) +
+        geom_point(aes(x = sent_val_dif, y = log(pageviews)), alpha = 0.6) +
+        geom_smooth(aes(x = sent_val_dif, y = log(pageviews)), alpha = 0.2, method = "lm") +
+        theme_few(base_family = 'GillSans') +
+        scale_y_continuous(labels = comma) +
+        labs(title="Log of pageviews of Kendrick Lamar's songs on genius.com,\nas predicted by musical/lyrical consistency") +
+        ylab("Log of pageviews on genius.com") +
+        xlab("Absolute difference between musical sentiment and lyrical sentiment")
+```
+
+It still looked to me like I had found something, so I tried fitting a linear model to see if there is a statistically significant effect. I controlled for the album, which is important because some of the albums have better reputations than others, which could draw in additional pageviews for a given song, and some albums are older than others, which means those pages have had more time to gather pageviews. For the stats geeks, here are the results of my model:
+
+```{r finale3}
+summary(lm(log(pageviews) ~ sent_val_dif + album_name, kendrick))
+```
+I found that the absolute difference between lyrical sentiment and musical sentiment was predictive of pageviews, even when controlling for the album. I think this is pretty cool. Emotional consistency between sounds and lyrics is predictive of a song's popularity. It would be interesting to see whether this effect persists into the future, as more people discover Kendrick Lamar and analyse the lyrics across his discography.
+
+
+
+
+
 
 ## Topic Modelling
 

@@ -5,7 +5,9 @@ Millions of people are listening to Kendrick Lamar's music, and many are analysi
 
 But not too many people are analysing Kendrick's music with hard data, so I decided to give it a shot. A few months ago I read a fantastic data science blog post by RCharlie which tried to pin down [the most depressing Radiohead song](http://rcharlie.com/2017-02-16-fitteR-happieR/), using data from Spotify and Genius. I modified RCharlie's code to get the data on Kendrick's music. If you're interested, my script for scraping the data is [here](https://github.com/laingdk/kendrick/blob/master/src/scrape_kendrick.R), and the data is [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv).
 
-I've included most of my code in this post, but you can skip it if you're not into it.
+I've included all my code in the post, but if you're not into that, you should be able follow along with the writing and the visualizations alone. If you want, you can skip ahead to the really cool part.
+
+Let's get started! I began by loading the data and fixing some factor levels.
 
 ``` r
 # Read in the data.
@@ -60,20 +62,141 @@ The data have offered up [For Free? - Interlude](https://genius.com/5047115) as 
 </iframe>
 I'm pretty satisfied with this answer. The song is dizzyingly complex, both lyrically and musically, and it's chock-full of symbolism, history, and wordplay.
 
-Runners-up are [Rigamortis](https://genius.com/Kendrick-lamar-rigamortus-lyrics) and \[HiiiPower\]:
+Runners-up are [Rigamortis](https://genius.com/Kendrick-lamar-rigamortus-lyrics) and [HiiiPower](https://genius.com/Kendrick-lamar-hiiipower-lyrics):
 
 <iframe width="280" height="157" src="https://www.youtube.com/embed/sBvngg87998" frameborder="0" allowfullscreen>
 </iframe>
 <iframe width="280" height="157" src="https://www.youtube.com/embed/RT2ZCdPVLAs" frameborder="0" allowfullscreen>
 </iframe>
-Sentiment Analysis
-------------------
-
-Spotify's API provides a column called "valence", which is defined as follows:
+I wanted to know how musical and lyrical sentiment vary within and between Kendrick's albums. The first part is easy: Spotify's API provides a variable called "valence", which is defined as follows:
 
 > A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).
 
-I'm also interested in the sentiment in the lyrics alone, and I think we can find a better description of the valence of the song by combining the lyric sentiment with Spotify's valence measure. Below I compute the sentiment of each song, by joining the lyrics with the Bing lexicon — a list of words which are labelled (by humans) as positive or negative.
+Below is a plot of the valence of Kendrick's music across his studio albums.
+
+``` r
+# See how the sentiment changes across the albums.
+valence_plot <- ggplot(kendrick, aes(x = track_name, y = (2*valence)-1, color = (2*valence)-1)) +
+        geom_hline(aes(yintercept=1, color=1), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=0.5, color=0.5), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=0, color=0), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=-0.5, color=-0.5), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=-1, color=-1), linetype="dashed", show.legend = FALSE) +
+        geom_point(aes(x = track_name, y = (2*valence)-1), size=0.1, show.legend = FALSE) +
+        geom_smooth(aes(x = as.numeric(track_number), color=..y..), size = 1, show.legend = FALSE, se = FALSE, span = 0.3) +
+        geom_smooth(aes(x = as.numeric(track_number)), color="black", size = 0.2, show.legend = FALSE, alpha = 0.9, se = FALSE, span = 0.3) +
+        facet_grid(~album_name, scales = "free", space = "free") +
+        scale_color_distiller(type = "div", palette = "RdYlGn", direction = 1, values = c(0,0.5,1)) +
+        theme_few(base_family = 'GillSans') +
+        theme(axis.text.x=element_text(size = 4, angle = 90, hjust = 1, vjust = 0.2),
+              axis.text.y=element_text(size = 5, angle = 90, hjust = 0.5),
+              axis.title.x=element_text(size = 9, angle = 180),
+              axis.title.y=element_text(size = 9, angle = 90),
+              strip.text = element_text(size = 7, angle = 90, vjust = 0)) +
+        xlab("") +
+        ylab("Musical sentiment in Kendrick Lamar's albums") +
+        scale_y_continuous(limits = c(-1,1),
+                           labels = c("very negative", 
+                                      "negative", 
+                                      "neutral", 
+                                      "positive", 
+                                      "very positive"))
+
+# Save and rotate.
+ggsave("../results/valence_plot.png", width = 4, height = 5)
+```
+
+    ## `geom_smooth()` using method = 'loess'
+
+    ## Warning in sqrt(sum.squares/one.delta): NaNs produced
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : span too small. fewer data values than degrees of freedom.
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : pseudoinverse used at 0.945
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : neighborhood radius 2.055
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : reciprocal condition number 0
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : There are other near singularities as well. 4.223
+
+    ## Warning in sqrt(sum.squares/one.delta): NaNs produced
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : span too small. fewer data values than degrees of freedom.
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : pseudoinverse used at 0.965
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : neighborhood radius 1.035
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : reciprocal condition number 0
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : There are other near singularities as well. 1.0712
+
+    ## Warning in sqrt(sum.squares/one.delta): NaNs produced
+
+    ## `geom_smooth()` using method = 'loess'
+
+    ## Warning in sqrt(sum.squares/one.delta): NaNs produced
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : span too small. fewer data values than degrees of freedom.
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : pseudoinverse used at 0.945
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : neighborhood radius 2.055
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : reciprocal condition number 0
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : There are other near singularities as well. 4.223
+
+    ## Warning in sqrt(sum.squares/one.delta): NaNs produced
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : span too small. fewer data values than degrees of freedom.
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : pseudoinverse used at 0.965
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : neighborhood radius 1.035
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : reciprocal condition number 0
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+    ## parametric, : There are other near singularities as well. 1.0712
+
+    ## Warning in sqrt(sum.squares/one.delta): NaNs produced
+
+``` r
+valence_plot <- image_read('../results/valence_plot.png')
+valence_plot <- image_rotate(valence_plot, 90)
+image_write(valence_plot, path = "../results/valence_plot.png", format = "png")
+```
+
+![](../results/valence_plot.png)
+
+Kendrick fans will recognize many of these scores as vaguely correct, but several of them are not. For example, the highest-scoring song was [Blow My High (Members Only)](https://genius.com/Kendrick-lamar-blow-my-high-members-only-lyrics):
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/n4bm7hqu_GE" frameborder="0" allowfullscreen>
+</iframe>
+While it's by no means a sad or even angry song, it doesn't reach emotional highs anywhere near what you'd expect from the Most Positive Song in Kendrick's career. So, Spotify's valence variable is incomplete as a measure of overall sentiment.
+
+I was interested in the sentiment in the lyrics alone, but this time I had to compute it myself. I joined the lyrics with the Bing lexicon — a list of words which are labelled by humans as positive or negative — and subtracted the negative words from the positive ones to get a general measure of lyrical sentiment. In each song, I normalized the sentiment by dividing by the total number of words that were present in both the song and the Bing lexicon. Below I plot the lyrical sentiment across albums.
 
 ``` r
 # Change the text from factor to character.
@@ -82,7 +205,7 @@ kendrick$lyrics <- as.character(kendrick$lyrics)
 # Get one word per row.
 tidy_kendrick <- kendrick %>% unnest_tokens(word, lyrics)
 
-# Remove the stop words.
+# Remove stop words. (These are words like "the" and "a", which only carry syntactic meaning.)
 cleaned_kendrick <- tidy_kendrick %>%
         anti_join(stop_words)
 
@@ -96,25 +219,74 @@ kendrick_sentiment <- cleaned_kendrick %>%
         spread(sentiment, n, fill = 0) %>%
         mutate(sentiment = (positive - negative)/(positive + negative))
 
-# Join.
+# Join the sentiment with the original dataset.
 kendrick <- inner_join(kendrick, kendrick_sentiment)
 
+# See how the sentiment changes across the albums.
+lyric_sent_plot <- ggplot(kendrick, aes(x = track_name, y = sentiment, color = sentiment)) +
+        geom_hline(aes(yintercept=1, color=1), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=0.5, color=0.5), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=0, color=0), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=-0.5, color=-0.5), linetype="dashed", show.legend = FALSE) +
+        geom_hline(aes(yintercept=-1, color=-1), linetype="dashed", show.legend = FALSE) +
+        geom_point(aes(x = track_name, y = sentiment), size=0.1, show.legend = FALSE) +
+        geom_smooth(aes(x = as.numeric(track_number), color=..y..), size = 1, show.legend = FALSE, se = FALSE, span = 0.3) +
+        geom_smooth(aes(x = as.numeric(track_number)), color="black", size = 0.2, show.legend = FALSE, alpha = 0.9, se = FALSE, span = 0.3) +
+        facet_grid(~album_name, scales = "free", space = "free") +
+        scale_color_distiller(type = "div", palette = "RdYlGn", direction = 1, values = c(0,0.5,1)) +
+        theme_few(base_family = 'GillSans') +
+        theme(axis.text.x=element_text(size = 4, angle = 90, hjust = 1, vjust = 0.2),
+              axis.text.y=element_text(size = 5, angle = 90, hjust = 0.5),
+              axis.title.x=element_text(size = 9, angle = 180),
+              axis.title.y=element_text(size = 9, angle = 90),
+              strip.text = element_text(size = 7, angle = 90, vjust = 0)) +
+        xlab("") +
+        ylab("Lyrical sentiment in Kendrick Lamar's albums") +
+        scale_y_continuous(limits = c(-1,1),
+                           labels = c("very negative", 
+                                      "negative", 
+                                      "neutral", 
+                                      "positive", 
+                                      "very positive"))
+
+# Save and rotate.
+ggsave("../results/lyric_sent_plot.png", width = 4, height = 5)
+lyric_sent_plot <- image_read('../results/lyric_sent_plot.png')
+lyric_sent_plot <- image_rotate(lyric_sent_plot, 90)
+image_write(lyric_sent_plot, path = "../results/lyric_sent_plot.png", format = "png")
+```
+
+![](../results/lyric_sent_plot.png)
+
+Fans of Kendrick's music will recognize that many of the sentiment scores match expectations. Positive songs like [LOVE. FEAT. ZACARI](https://genius.com/Kendrick-lamar-love-lyrics) and [Poetic Justice](https://genius.com/Kendrick-lamar-poetic-justice-lyrics) have high scores, and negative songs like [FEEL](https://genius.com/Kendrick-lamar-feel-lyrics) and [The Blacker the Berry](https://genius.com/Kendrick-lamar-the-blacker-the-berry-lyrics) have low scores.
+
+But there are some mistakes, too. One of the main weaknesses of this measure of lyrical sentiment is that it can't pick up on negation or irony. For example, the song that was identified as having the second-most positive lyrics in Kendrick's whole discography was [No Make-up (Her Vice)](https://genius.com/Kendrick-lamar-no-makeup-her-vice-lyrics):
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/xQtWY-ZxFTw" frameborder="0" allowfullscreen>
+</iframe>
+Despite its eerie melody and tragic story (revealed in the final line), the song got a high sentiment score because of the many positive words in the chorus:
+
+> I **love** the way you put it on your eyes The **roses** on your face **light** up the sky Those lips are **colorful** all of the time And girl, that's fine, but I wanna know do you mind No make-up today, no make-up today
+
+The verses also repeat the words, "beautiful," "beauty," "wonderful blessing," "heaven," and "smile."
+
+Another problem with this measure of lyrical sentiment is that it always treats profanity as being negative, which isn't always accurate in rap music. And Kendrick is very profane. If you're up for it, you can see a word cloud of his most used words [here](https://github.com/laingdk/kendrick/blob/master/results/kendrick_wordcloud.png).
+
+Still, for the most part lyrical sentiment is capturing the general mood of the lyrics. To get a more complete measure of sentiment, I converted the musical and lyrical sentiment scores to the same scale, then took the average between them. I think the plot below gives the best generalization of musical and lyrical sentiment.
+
+``` r
 # Transform the valence to the same scale as the sentiment.
 kendrick <- kendrick %>% mutate(valence = ((valence*2)-1))
 
-# Get a smarter measure of sentiment.
+# Get a smarter measure of sentiment
 kendrick <- kendrick %>% mutate(smart_sentiment = (sentiment + valence)/2)
 
 # Now get a measure of the difference between lyric sentiment and song valence.
 # This tells us which songs sound positive but are filled with especially negative
 # lyrics, or vice versa.
 kendrick <- kendrick %>% mutate(sent_val_dif = abs(sentiment - valence))
-```
 
-We have the sentiment for each song, so let's plot it across Kendrick's discography.
-
-``` r
-# See how the sentiment changes across the albums.
+# See how the full sentiment changes across the albums.
 sentiment_plot <- ggplot(kendrick, aes(x = track_name, y = smart_sentiment, color = smart_sentiment)) +
         geom_hline(aes(yintercept=1, color=1), linetype="dashed", show.legend = FALSE) +
         geom_hline(aes(yintercept=0.5, color=0.5), linetype="dashed", show.legend = FALSE) +
@@ -133,7 +305,7 @@ sentiment_plot <- ggplot(kendrick, aes(x = track_name, y = smart_sentiment, colo
               axis.title.y=element_text(size = 9, angle = 90),
               strip.text = element_text(size = 7, angle = 90, vjust = 0)) +
         xlab("") +
-        ylab("Sentiment in Kendrick Lamar's music and lyrics") +
+        ylab("General sentiment in Kendrick Lamar's music and lyrics") +
         scale_y_continuous(limits = c(-1,1),
                            labels = c("very negative", 
                                       "negative", 
@@ -155,6 +327,8 @@ image_write(sentiment_plot, path = "../results/sentiment_plot.png", format = "pn
 ```
 
 ![](../results/sentiment_plot.png)
+
+Now here's where things get interesting. I decided to see which songs had the greatest differences between their musical sentiment (as defined by Spotify's "valence") and my measure of lyrical sentiment. For example, I wanted to know which songs sound happy but have sad lyrics, or vice versa. I was also curious to know which songs had the least differences between musical and lyrical sentiment; these would be the most self-consistent, the least ironic.
 
 ``` r
 # Plot the difference between lyrical sentiment and musical valence.
@@ -191,50 +365,82 @@ image_write(sent_val_dif_plot, path = "../results/sent_val_dif_plot.png", format
 
 ![](../results/sent_val_dif_plot.png)
 
-You might wonder which words are contributing most to these positive and negative sentiment scores. We'll see this below, but first, a warning: Kendrick is profane.
+No Make-up was identified as being especially inconsistent in its sound and lyrics, as predicted. Another sad song with positive lyrics is [Real](https://genius.com/Kendrick-lamar-real-lyrics), in which Kendrick uses the word "love" 49 times:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/DDau48PysuU" frameborder="0" allowfullscreen>
+</iframe>
+So, the combined sentiment score successfully reeled in the mistakes made by the lyric sentiment score.
+
+One the right side of the graph, we can see that Blow My High (Members Only) was identified as being the song with the greatest positive difference between musical sentiment and lyrical sentiment. So the combined sentiment score was equally successful in correcting for the mistakes in Spotify's measure of musical valence.
+
+The other thing we can see in the plot above is the songs that are the most self-consistent — the ones with the least differences between musical sentiment and lyrical sentiment. If you're a Kendrick fan and you scan through the songs with the smallest bars, you might notice something interesting: most of them are on the high end for general popularity. Could it be that songs with emotionally consistent lyrics and sounds are more likely to be hits?
+
+I tried plotting the number of pageviews on Genius against the absolute difference between musical and lyrical sentiment.
 
 ``` r
-# Get the words contribute most to each sentiment.
-bing_word_counts <- tidy_kendrick %>%
-        inner_join(bing) %>%
-        count(word, sentiment, sort = TRUE) %>%
-        ungroup()
-
-# See a word cloud of the top words by word count.
-cleaned_kendrick %>%
-        count(word) %>%
-        with(wordcloud(word, n, max.words = 100, random.order = F))
+ggplot(kendrick) +
+        geom_point(aes(x = sent_val_dif, y = pageviews), alpha = 0.6) +
+        theme_few(base_family = 'GillSans') +
+        scale_y_continuous(labels = comma) +
+        labs(title="Pageviews of Kendrick Lamar's songs on genius.com,\nas predicted by musical/lyrical consistency") +
+        ylab("Pageviews on genius.com") +
+        xlab("Absolute difference between musical sentiment and lyrical sentiment")
 ```
 
-![](kendrick_files/figure-markdown_github/sentiment_contributions-1.png)
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](kendrick_files/figure-markdown_github/finale1-1.png)
+
+This looked like a pretty strong pattern to me, but I realized that I should log-transform the pageviews to get more consistent dispersion.
 
 ``` r
-# View the words contribute most to each sentiment
-bing_word_counts %>%
-        filter(n > 30) %>%
-        mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
-        mutate(word = reorder(word, n)) %>%
-        ggplot(aes(word, n, fill = sentiment)) +
-        geom_bar(stat = "identity", alpha = 0.8) +
-        scale_fill_manual(values = c("red", "#3CDE00")) +
-        theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
-        ylab("Contribution to sentiment") +
-        coord_flip()
+ggplot(kendrick) +
+        geom_point(aes(x = sent_val_dif, y = log(pageviews)), alpha = 0.6) +
+        geom_smooth(aes(x = sent_val_dif, y = log(pageviews)), alpha = 0.2, method = "lm") +
+        theme_few(base_family = 'GillSans') +
+        scale_y_continuous(labels = comma) +
+        labs(title="Log of pageviews of Kendrick Lamar's songs on genius.com,\nas predicted by musical/lyrical consistency") +
+        ylab("Log of pageviews on genius.com") +
+        xlab("Absolute difference between musical sentiment and lyrical sentiment")
 ```
 
-![](kendrick_files/figure-markdown_github/sentiment_contributions-2.png)
+    ## Warning: Removed 1 rows containing non-finite values (stat_smooth).
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](kendrick_files/figure-markdown_github/finale2-1.png)
+
+It still looked to me like I had found something, so I tried fitting a linear model to see if there is a statistically significant effect. I controlled for the album, which is important because some of the albums have better reputations than others, which could draw in additional pageviews for a given song, and some albums are older than others, which means those pages have had more time to gather pageviews. For the stats geeks, here are the results of my model:
 
 ``` r
-# Colored by sentiment.
-tidy_kendrick %>%
-        inner_join(bing) %>%
-        count(word, sentiment, sort = TRUE) %>%
-        acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-        comparison.cloud(colors = c("red", "#3CDE00"),
-                         max.words = 100, title.size = 2)
+summary(lm(log(pageviews) ~ sent_val_dif + album_name, kendrick))
 ```
 
-![](kendrick_files/figure-markdown_github/sentiment_contributions-3.png)
+    ## 
+    ## Call:
+    ## lm(formula = log(pageviews) ~ sent_val_dif + album_name, data = kendrick)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -1.6085 -0.3683 -0.1066  0.5902  1.5288 
+    ## 
+    ## Coefficients:
+    ##                                  Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)                       13.2912     0.2619  50.743  < 2e-16 ***
+    ## sent_val_dif                      -0.6049     0.2791  -2.168  0.03423 *  
+    ## album_namegood kid, m.A.A.d city   1.2689     0.2962   4.284 6.87e-05 ***
+    ## album_nameTo Pimp A Butterfly      0.7250     0.2600   2.789  0.00711 ** 
+    ## album_nameuntitled unmastered.    -0.4272     0.3117  -1.371  0.17570    
+    ## album_nameDAMN.                    0.4542     0.2694   1.686  0.09708 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.6934 on 59 degrees of freedom
+    ##   (1 observation deleted due to missingness)
+    ## Multiple R-squared:  0.4751, Adjusted R-squared:  0.4306 
+    ## F-statistic: 10.68 on 5 and 59 DF,  p-value: 2.448e-07
+
+I found that the absolute difference between lyrical sentiment and musical sentiment was predictive of pageviews, even when controlling for the album. I think this is pretty cool. Emotional consistency between sounds and lyrics is predictive of a song's popularity. It would be interesting to see whether this effect persists into the future, as more people discover Kendrick Lamar and analyse the lyrics across his discography.
 
 Topic Modelling
 ---------------
