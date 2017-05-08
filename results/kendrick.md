@@ -1,11 +1,11 @@
-Kendrick LamaR
+KendRick LamaR
 ================
 
-Millions of people are listening to Kendrick Lamar's music, and many are analysing his lyrics too. On [Genius](https://genius.com/artists/Kendrick-lamar), a lyric annotation website, the songs on Kendrick's studio albums have over 70 million pageviews. Many of these songs have dozens of annotations, which are often refined by hundreds of contributors, including the Pullitzer-prize winning author [Michael Chabon](http://pitchfork.com/news/58421-kendrick-lamars-the-blacker-the-berry-gets-annotated-for-genius-by-pulitzer-winning-author-michael-chabon/).
+Millions of people are listening to Kendrick Lamar's music, and many are analysing his lyrics too. On [Genius](https://genius.com/artists/Kendrick-lamar), a lyric annotation website, the songs on Kendrick's studio albums have over 70 million pageviews. Many of these songs have dozens of annotations, which are often refined by hundreds of contributors, including the Pulitzer-prize winning author [Michael Chabon](http://pitchfork.com/news/58421-kendrick-lamars-the-blacker-the-berry-gets-annotated-for-genius-by-pulitzer-winning-author-michael-chabon/).
 
-But not too many people are analysing Kendrick's music with hard data, so I decided to give it a shot. A few months ago I read a fantastic data science blog post by RCharlie which tried to pin down [the most depressing Radiohead song](http://rcharlie.com/2017-02-16-fitteR-happieR/), using data from Spotify and Genius. I modified RCharlie's code to get the data on Kendrick's music. If you're interested, my script for scraping the data itself is [here](https://github.com/laingdk/kendrick/blob/master/src/scrape_kendrick.R), and the data is [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv).
+But not too many people are analysing Kendrick's music with hard data, so I decided to give it a shot. A few months ago I read a fantastic data science blog post by RCharlie which tried to pin down [the most depressing Radiohead song](http://rcharlie.com/2017-02-16-fitteR-happieR/), using data from Spotify and Genius. I modified RCharlie's code to get the data on Kendrick's music. If you're interested, my script for scraping the data is [here](https://github.com/laingdk/kendrick/blob/master/src/scrape_kendrick.R), and the data itself is [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv).
 
-I've included all my code in the post, but if you're not into that, you should be able follow along with the writing and the visualizations alone. If you want, you can skip ahead to the really cool part.
+I've included most of my code in the post, but if you're not into that, you should be able follow along with the writing and the visualizations alone.
 
 Let's get started! I began by loading the data and fixing some factor levels.
 
@@ -34,16 +34,22 @@ kendrick <- kendrick %>% mutate(ann_per_word = annotations/song_word_count)
 
 The data have offered up [For Free? - Interlude](https://genius.com/5047115) as the most analysed Kendrick Lamar song:
 
-<iframe width="560" height="315" align="centre" src="https://www.youtube.com/embed/_ZTYgq4EoRo" frameborder="0" allowfullscreen>
+<center>
+<iframe width="560" height="315" align="middle" src="https://www.youtube.com/embed/_ZTYgq4EoRo" frameborder="0" allowfullscreen>
 </iframe>
-I'm pretty satisfied with this answer. The song is dizzyingly complex, both lyrically and musically, and it's chock-full of symbolism, history, and wordplay.
+</center>
+<br> I'm pretty satisfied with this answer. The song is dizzyingly complex, both lyrically and musically, and it's chock-full of symbolism, history, and wordplay.
 
 Runners-up are [Rigamortis](https://genius.com/Kendrick-lamar-rigamortus-lyrics) and [HiiiPower](https://genius.com/Kendrick-lamar-hiiipower-lyrics):
 
-<iframe width="280" height="157" align="centre" src="https://www.youtube.com/embed/sBvngg87998" frameborder="0" allowfullscreen>
+<center>
+<iframe width="280" height="157" align="middle" src="https://www.youtube.com/embed/sBvngg87998" frameborder="0" allowfullscreen>
 </iframe>
-<iframe width="280" height="157" align="centre" src="https://www.youtube.com/embed/RT2ZCdPVLAs" frameborder="0" allowfullscreen>
+<iframe width="280" height="157" align="middle" src="https://www.youtube.com/embed/RT2ZCdPVLAs" frameborder="0" allowfullscreen>
 </iframe>
+</center>
+<br>
+
 The cool part
 -------------
 
@@ -57,8 +63,12 @@ Below is a plot of the valence of Kendrick's music across his studio albums.
 
 Kendrick fans will recognize many of these scores as vaguely correct, but several of them are not. For example, the highest-scoring song was [Blow My High (Members Only)](https://genius.com/Kendrick-lamar-blow-my-high-members-only-lyrics):
 
-<iframe width="560" height="315" align="centre" src="https://www.youtube.com/embed/n4bm7hqu_GE" frameborder="0" allowfullscreen>
+<center>
+<iframe width="560" height="315" align="middle" src="https://www.youtube.com/embed/n4bm7hqu_GE" frameborder="0" allowfullscreen>
 </iframe>
+</center>
+<br>
+
 While it's by no means a sad or even angry song, it doesn't reach emotional highs anywhere near what you'd expect from the Most Positive Song in Kendrick's career. I think it's fair to say that Spotify's valence variable is incomplete as a measure of overall sentiment. The main thing that is missing is the sentiment in the lyrics alone. I had to compute it myself.
 
 ``` r
@@ -96,8 +106,12 @@ Fans of Kendrick's music will recognize that many of the sentiment scores are in
 
 But there are some mistakes, too. The main weakness of this measure of lyrical sentiment is that it can't pick up on negation or irony. For example, the song that was identified as having the second-most positive lyrics in Kendrick's whole discography was [No Make-up (Her Vice)](https://genius.com/Kendrick-lamar-no-makeup-her-vice-lyrics):
 
-<iframe width="560" height="315" align="centre" src="https://www.youtube.com/embed/xQtWY-ZxFTw" frameborder="0" allowfullscreen>
+<center>
+<iframe width="560" height="315" align="middle" src="https://www.youtube.com/embed/xQtWY-ZxFTw" frameborder="0" allowfullscreen>
 </iframe>
+</center>
+<br>
+
 Despite its eerie melody and tragic story (revealed in the final line), the song got a high sentiment score because of the many positive words in the chorus:
 
 > I **love** the way you put it on your eyes
@@ -132,33 +146,41 @@ Proclamations about extreme positivity and negativity are now more rare, and I t
 
 ``` r
 kendrick %>%
-        select(track_name, album_name, smart_sentiment) %>%
+        select(track_name, smart_sentiment) %>%
         arrange(smart_sentiment) %>% head(5) %>% kable()
 ```
 
-| track\_name               | album\_name            |  smart\_sentiment|
-|:--------------------------|:-----------------------|-----------------:|
-| Bitch, Don’t Kill My Vibe | good kid, m.A.A.d city |        -0.7441429|
-| The Blacker The Berry     | To Pimp A Butterfly    |        -0.5881429|
-| untitled 02 | 06.23.2014. | untitled unmastered.   |        -0.5741694|
-| The Spiteful Chant        | Section.80             |        -0.5496250|
-| Hood Politics             | To Pimp A Butterfly    |        -0.5460909|
+<center>
+
+| track\_name               |  smart\_sentiment|
+|:--------------------------|-----------------:|
+| Bitch, Don’t Kill My Vibe |        -0.7441429|
+| The Blacker The Berry     |        -0.5881429|
+| untitled 02 &#124; 06.23.2014. |        -0.5741694|
+| The Spiteful Chant        |        -0.5496250|
+| Hood Politics             |        -0.5460909|
+
+</center>
 
 And here are the top five most positive songs:
 
 ``` r
 kendrick %>%
-        select(track_name, album_name, smart_sentiment) %>%
+        select(track_name, smart_sentiment) %>%
         arrange(desc(smart_sentiment)) %>% head(5) %>% kable()
 ```
 
-| track\_name               | album\_name            |  smart\_sentiment|
-|:--------------------------|:-----------------------|-----------------:|
-| LOVE. FEAT. ZACARI.       | DAMN.                  |         0.6183636|
-| Poetic Justice            | good kid, m.A.A.d city |         0.2380000|
-| i                         | To Pimp A Butterfly    |         0.2105455|
-| untitled 06 | 06.30.2014. | untitled unmastered.   |         0.1136667|
-| A.D.H.D                   | Section.80             |         0.1058750|
+<center>
+
+| track\_name               |  smart\_sentiment|
+|:--------------------------|-----------------:|
+| LOVE. FEAT. ZACARI.       |         0.6183636|
+| Poetic Justice            |         0.2380000|
+| i                         |         0.2105455|
+| untitled 06 &#124; 06.30.2014. |         0.1136667|
+| A.D.H.D                   |         0.1058750|
+
+</center>
 
 Listen to any of these songs, and I think you'll at least agree with their classification as positive or negative, if not their rankings.
 
@@ -180,9 +202,11 @@ With a little bit of trickery for the purposes of visualization (`sent_val_dif*s
 
 No Make-up was identified as being especially inconsistent in its sound and lyrics, as predicted. Another sad song with seemingly positive lyrics is [Real](https://genius.com/Kendrick-lamar-real-lyrics), in which Kendrick uses the word "love" 49 times:
 
-<iframe width="560" height="315" align="centre" src="https://www.youtube.com/embed/DDau48PysuU" frameborder="0" allowfullscreen>
+<center>
+<iframe width="560" height="315" align="middle" src="https://www.youtube.com/embed/DDau48PysuU" frameborder="0" allowfullscreen>
 </iframe>
-So, the combined sentiment score successfully corrected the mistakes made by the lyric sentiment score. I think it was equally successful in correcting for the mistakes in Spotify's measure of musical valence. For example, on the right side of the graph, we can see that Blow My High (Members Only) was identified as being the song with the greatest positive difference between musical sentiment and lyrical sentiment.
+</center>
+<br> So, the combined sentiment score successfully corrected the mistakes made by the lyric sentiment score. I think it was equally successful in correcting for the mistakes in Spotify's measure of musical valence. For example, on the right side of the graph, we can see that "Blow My High (Members Only)" was identified as being the song with the greatest positive difference between musical sentiment and lyrical sentiment.
 
 The other interesting feature of the plot above is the songs that are the most self-consistent — the ones with the least differences between musical sentiment and lyrical sentiment. If you're a Kendrick fan and you scan through the songs with the smallest bars, you might notice something interesting: most of them are quite popular even among people who don't listen to Kendrick's albums. Could it be that songs with emotionally consistent lyrics and sounds are more likely to be hits?
 
@@ -191,9 +215,13 @@ The still cooler part
 
 I tried plotting the number of pageviews on Genius against the absolute difference between musical and lyrical sentiment.
 
+![](../results/pageviews_plot.png)
+
 On the left side of the graph, you see songs with small differences between musical and lyrical sentiment — the self-consistent songs. On the right side, you see songs with large differences — the positive songs with negative lyrics, and vice versa. The y-axis is the number of pageviews on Genius, which I think is a decent measure of popularity. (To visit a song's page, not only would somebody usually have to know the song, but they would usually like it enough to wonder what the lyrics mean.)
 
-This looked like a pretty strong pattern to me, but if I was going to do a fair test of my hypothesis, I realized that I should log-transform the pageviews to get more consistent dispersion.
+This looked like a pretty strong pattern to me, but if I was going to do a fair test of my hypothesis, I realized that I should log-transform the pageviews to get more consistent dispersion. (If you click the plot, you can see an interactive version to find out which song is which.)
+
+[![](../results/log_pageviews_plot.png)](https://laingdk.shinyapps.io/kendrick_pageview_plot/)
 
 It still looked to me like I had found a clear pattern, so I tried fitting a linear model to see if there is a statistically significant effect. I controlled for the album, which is important for two main reasons. Firstly, some albums have better reputations than others, which could draw in additional pageviews for a given song. Secondly, some albums are older than others, which means those pages have had more time to gather pageviews. So, controlling for the album controls for both the reputation of a given cluster of songs and their time period. For the stats geeks, here are the results of my model:
 
@@ -228,7 +256,7 @@ summary(fit)
 
 I found that the absolute difference between lyrical sentiment and musical sentiment was predictive of pageviews, even when controlling for the album. I think this is pretty cool. Emotional consistency between sounds and lyrics is predictive of a song's popularity. It would be interesting to see whether this effect persists into the future, as more people discover Kendrick Lamar and analyse the lyrics across his discography. It would also be interesting to see whether the effect generalizes to other artists.
 
-I'll now say a few words on the relative merits of each album, based on my own experience and my understanding of the data. Many critics believe that To Pimp A Butterfly is the best album of the decade so far — potentially even the best album of the century. While I agree that To Pimp A Butterfly is a masterpiece, I think that in thirty years, good kid, m.A.A.d city will seem like the better album. I think it's more internally consistent than the other albums, which we can partly see in the fact that most of its songs have small differences between musical and lyrical sentiment. It is also sublime in its imagery, its narrative, and its evocation of eduring themes in male teenhood. This shows up in the data too!
+I'll now say a few words on the relative merits of each album, based on my own experience and my understanding of the data. Many critics believe that *To Pimp A Butterfly* is the best album of the decade so far — potentially even the best album of the century. While I agree that *To Pimp A Butterfly* is a masterpiece, I think that in thirty years, *good kid, m.A.A.d city* will seem like the better album. I think it's more internally consistent than the other albums, which we can partly see in the fact that most of its songs have small differences between musical and lyrical sentiment. It is also sublime in its imagery, its narrative, and its evocation of eduring themes in male teenhood. This shows up in the data too!
 
 To get a brief glimpse of the themes across Kendrick's albums, I computed something called the Term Frequency-Inverse Document Frequency, of tf-idf, of each word in the album. The tf-idf is the product of two numbers:
 
@@ -261,6 +289,8 @@ album_words %>%
         head() %>% select(album_name, track_name, word, tf_idf) %>% kable()
 ```
 
+<center>
+
 | album\_name            | track\_name                               | word   |    tf\_idf|
 |:-----------------------|:------------------------------------------|:-------|----------:|
 | good kid, m.A.A.d city | Sing About Me, I'm Dying Of Thirst        | thirst |  0.0066223|
@@ -269,6 +299,8 @@ album_words %>%
 | good kid, m.A.A.d city | Swimming Pools (Drank) - Extended Version | dive   |  0.0049668|
 | good kid, m.A.A.d city | The Art of Peer Pressure                  | doo    |  0.0037251|
 | good kid, m.A.A.d city | Money Trees                               | bish   |  0.0035529|
+
+</center>
 
 ``` r
 # Reset the factor levels according to the tf-idf
@@ -281,6 +313,6 @@ Below you can see the words with the highest tf-idf for each album:
 
 ![Representative words across Kendrick Lamar's discography](../results/album_top_words.png)
 
-I think all these word clouds are pretty cool, but the one for good kid, m.A.A.d city is especially rich with evocative words.
+I think all these word clouds are pretty cool, but the one for *good kid, m.A.A.d city* is especially rich with evocative words.
 
 There is surely more to be done with this data. I haven't even touched the many other variables from Spotify's API, including "danceability," "energy," "key," "loudness," "speechiness," "acousticness," "instrumentalness," "tempo," and "time\_signature." Again, you can download the data [here](https://github.com/laingdk/kendrick/blob/master/data/scraped_kendrick_data.csv). Let me know if you find something cool!
