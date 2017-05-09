@@ -85,7 +85,6 @@ shinyServer(function(input, output) {
                 g <- ggplot(kendrick, aes(x = sent_val_dif, y = pageview_scale(), text = paste0(track_name, "<br>", album_name))) +
                         geom_point(aes(color = album_name), size = 2, alpha = 0.7) +
                         theme_tufte(base_family = 'GillSans') +
-                        theme(legend.position = "none") +
                         scale_y_continuous(labels = comma) +
                         scale_color_manual(values = c("purple", "darkblue", "black", "darkgreen", "red")) +
                         labs(title=plot_title()) +

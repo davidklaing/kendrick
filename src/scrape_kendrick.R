@@ -5,6 +5,9 @@ library(lubridate)
 library(assertthat)
 library(rvest)
 
+# Credit: this script is adapted from Charlie Thompson's
+# blog post, fitteR happieR: http://rcharlie.com/2017-02-16-fitteR-happieR/
+
 ##### IMPORTANT: Copy and paste your access tokens here.
 
 spotify_client_id <- 'xxxxxxxxxx'
